@@ -1,6 +1,9 @@
-package main
+package goneo
 
-//import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type DatabaseService struct {
 	nodes         []*Node
@@ -23,6 +26,8 @@ func (db *DatabaseService) NewNode() *Node {
 	db.nodes = append(db.nodes, n)
 	n.id = len(db.nodes) - 1
 
+	fmt.Println("New Node: ", n.id, ", nlen:", len(db.nodes))
+
 	return n
 }
 
@@ -37,14 +42,20 @@ func (db *DatabaseService) createRelation(a, b *Node) *Relation {
 	return r
 }
 
-func (db *DatabaseService) GetNode(id int) *Node {
-	return db.nodes[id]
+func (db *DatabaseService) GetNode(id int) (*Node, error) {
+	if db.nodes == nil || len(db.nodes) < id+1 {
+		return nil, errors.New(fmt.Sprintf("Node %d not found", id))
+	}
+	return db.nodes[id], nil
 }
 func (db *DatabaseService) GetAllNodes() []*Node {
 	return db.nodes
 }
-func (db *DatabaseService) GetRelation(id int) *Relation {
-	return db.relationships[id]
+func (db *DatabaseService) GetRelation(id int) (*Relation, error) {
+	if db.nodes == nil || len(db.relationships) < id+1 {
+		return nil, errors.New("Relationship not found")
+	}
+	return db.relationships[id], nil
 }
 func (db *DatabaseService) FindPath(start, end *Node) Path {
 

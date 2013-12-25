@@ -1,4 +1,4 @@
-package main
+package goneo
 
 import (
 	"errors"
@@ -455,12 +455,6 @@ func (p *parser) parse(filename string, src string) GcyQuery {
 	return query
 }
 
-// Parse parses a set of EBNF productions from source src.
-// It returns a set of productions. Errors are reported
-// for incorrect syntax and if a production is declared
-// more than once; the filename is used only for error
-// positions.
-//
 func Parse(filename string, src string) (GcyQuery, error) {
 	var p parser
 	grammar := p.parse(filename, src)

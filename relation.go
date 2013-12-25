@@ -1,4 +1,4 @@
-package main
+package goneo
 
 import "fmt"
 
@@ -25,4 +25,13 @@ func (rel *Relation) String() string {
 
 func (rel *Relation) Property(prop string) interface{} {
 	return rel.Properties[prop]
+}
+
+func DirectionFromString(str string) Direction {
+	if str == "out" || str == "outgoing" {
+		return Outgoing
+	} else if str == "in" || str == "incoming" {
+		return Incoming
+	}
+	return Both
 }

@@ -1,10 +1,11 @@
 package main
 
 import "fmt"
+import "goneo"
 
 func main() {
 
-	db := NewTemporaryDb()
+	db := goneo.NewTemporaryDb()
 
 	nodeA := db.NewNode()
 	nodeA.SetProperty("foo", "bar")
@@ -25,12 +26,5 @@ func main() {
 
 	nodeB.RelateTo(nodeC, "BELONGS_TO")
 
-	path = db.FindPath(nodeA, nodeC)
-
-	fmt.Println("path: ", path)
-	
-	query, err := Parse("gcy", "start n=node(*) return n as node")
-	fmt.Println(err)
-	table := query.evaluate(Context{db: db})
-	fmt.Println(table)
+	goneo.NewGoneoServer(db).Bind(":7474").Start()
 }

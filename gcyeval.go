@@ -1,4 +1,4 @@
-package main
+package goneo
 
 import (
 	"bytes"
@@ -90,11 +90,13 @@ func (r *root) evaluate(ctx Context) TabularData {
 			}
 		} else {
 			id, _ := strconv.Atoi(r.idRange)
-			ctx.vars[r.name] = append(ctx.vars[r.name], ctx.db.GetNode(id))
+			node, _ := ctx.db.GetNode(id)
+			ctx.vars[r.name] = append(ctx.vars[r.name], node)
 		}
 	} else {
 		id, _ := strconv.Atoi(r.idRange)
-		ctx.vars[r.name] = append(ctx.vars[r.name], ctx.db.GetRelation(id))
+		rel, _ := ctx.db.GetRelation(id)
+		ctx.vars[r.name] = append(ctx.vars[r.name], rel)
 	}
 
 	return TabularData{}

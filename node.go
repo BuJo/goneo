@@ -1,4 +1,4 @@
-package main
+package goneo
 
 import (
 	"fmt"
@@ -35,6 +35,9 @@ func (node *Node) SetProperty(name, val string) {
 		node.properties = make(map[string]string)
 	}
 	node.properties[name] = val
+}
+func (node *Node) GetProperties()  map[string]string {
+	return node.properties
 }
 
 func (node *Node) RelateTo(end *Node, relType string) *Relation {

@@ -60,7 +60,7 @@ func (path *simplePath) String() (str string) {
 	str = fmt.Sprintf("(%d)", path.start.id)
 
 	for _, rel := range path.relations {
-		str = fmt.Sprintf("%s-[:%s]->(%d)", str, rel.Type, rel.End.id)
+		str = fmt.Sprintf("%s-[:%s]->(%d)", str, rel.typ, rel.End.id)
 	}
 
 	return

@@ -3,6 +3,7 @@ package goneo
 import (
 	"errors"
 	"fmt"
+	"sort"
 )
 
 type DatabaseService struct {
@@ -19,14 +20,19 @@ func NewTemporaryDb() *DatabaseService {
 	return db
 }
 
-func (db *DatabaseService) NewNode() *Node {
+func (db *DatabaseService) NewNode(labels ...string) *Node {
 	n := new(Node)
 	n.db = db
 
 	db.nodes = append(db.nodes, n)
 	n.id = len(db.nodes) - 1
 
-	fmt.Println("New Node: ", n.id, ", nlen:", len(db.nodes))
+	sort.Strings(labels)
+
+	n.labels = make([]string, 0, 1)
+	for _, l := range labels {
+		n.labels = append(n.labels, l)
+	}
 
 	return n
 }
@@ -48,15 +54,22 @@ func (db *DatabaseService) GetNode(id int) (*Node, error) {
 	}
 	return db.nodes[id], nil
 }
+
 func (db *DatabaseService) GetAllNodes() []*Node {
 	return db.nodes
 }
+
 func (db *DatabaseService) GetRelation(id int) (*Relation, error) {
 	if db.nodes == nil || len(db.relationships) < id+1 {
 		return nil, errors.New("Relationship not found")
 	}
 	return db.relationships[id], nil
 }
+
+func (db *DatabaseService) GetAllRelations() []*Relation {
+	return db.relationships
+}
+
 func (db *DatabaseService) FindPath(start, end *Node) Path {
 
 	builder := NewPathBuilder(start)
@@ -88,4 +101,16 @@ func findPathRec(builder *PathBuilder, end *Node) (b *PathBuilder, done bool) {
 	}
 
 	return builder, false
+}
+
+func (db *DatabaseService) FindNodeByProperty(prop, value string) []*Node {
+	found := make([]*Node, 0)
+
+	for _, node := range db.nodes {
+		if node.HasProperty(prop) && node.Property(prop) == value {
+			found = append(found, node)
+		}
+	}
+
+	return found
 }

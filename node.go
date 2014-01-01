@@ -2,15 +2,14 @@ package goneo
 
 import (
 	"fmt"
+	"sort"
 )
-
-type Label string
 
 type Node struct {
 	db *DatabaseService
 	id int
 
-	Labels     []Label
+	labels     []string
 	relations  []*Relation
 	properties map[string]string
 }
@@ -31,18 +30,44 @@ func (node *Node) Property(prop string) interface{} {
 	return node.properties[prop]
 }
 func (node *Node) SetProperty(name, val string) {
-	if (node.properties == nil ) {
+	if node.properties == nil {
 		node.properties = make(map[string]string)
 	}
 	node.properties[name] = val
 }
-func (node *Node) GetProperties()  map[string]string {
+func (node *Node) GetProperties() map[string]string {
 	return node.properties
 }
 
+func (node *Node) HasProperty(prop string) bool {
+	_, ok := node.properties[prop]
+	return ok
+}
+
+func (node *Node) HasLabel(labels ...string) bool {
+	for _, label := range labels {
+		i := sort.SearchStrings([]string(node.labels), label)
+		if i < len(node.labels) && node.labels[i] == label {
+			// x is present at data[i]
+		} else {
+			// x is not present in data,
+			return false
+		}
+	}
+
+	return true
+}
+
 func (node *Node) RelateTo(end *Node, relType string) *Relation {
+
+	for _, rel := range node.Relations(Outgoing) {
+		if rel.End.id == end.id && rel.typ == relType {
+			return rel
+		}
+	}
+
 	rel := node.db.createRelation(node, end)
-	rel.Type = relType
+	rel.typ = relType
 
 	node.relations = append(node.relations, rel)
 	end.relations = append(end.relations, rel)
@@ -64,4 +89,8 @@ func (node *Node) Relations(dir Direction) []*Relation {
 	}
 
 	return rels
+}
+
+func (node *Node) Id() int {
+	return node.id
 }

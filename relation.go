@@ -6,7 +6,7 @@ type Relation struct {
 	db *DatabaseService
 	id int
 
-	Type       string
+	typ        string
 	Start, End *Node
 	Properties map[string]interface{}
 }
@@ -20,7 +20,7 @@ const (
 )
 
 func (rel *Relation) String() string {
-	return fmt.Sprintf("(%d)-[:%s]->(%d)", rel.Start.id, rel.Type, rel.End.id)
+	return fmt.Sprintf("(%d)-[:%s]->(%d)", rel.Start.id, rel.typ, rel.End.id)
 }
 
 func (rel *Relation) Property(prop string) interface{} {
@@ -34,4 +34,8 @@ func DirectionFromString(str string) Direction {
 		return Incoming
 	}
 	return Both
+}
+
+func (rel *Relation) Type() string {
+	return rel.typ
 }

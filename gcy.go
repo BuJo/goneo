@@ -134,6 +134,14 @@ func (l *lexer) acceptUntil(valid string) bool {
 
 	return v == 0x20
 }
+func (l *lexer) skipSpace() bool {
+	numSkipped := l.acceptRun(markSpace)
+	if numSkipped > 0 {
+		l.ignore()
+		return true
+	}
+	return false
+}
 
 func printEmitted(items chan item) {
 	for i := range items {
@@ -160,9 +168,13 @@ func lexGcy(l *lexer) stateFn {
 	for {
 		if strings.HasPrefix(l.input[l.pos:], "start") {
 			return lexQuery
+		} else if strings.HasPrefix(l.input[l.pos:], "return") {
+			return lexReturn
+		} else if strings.HasPrefix(l.input[l.pos:], "match") {
+			return lexMatch
 		}
 
-		if l.next() == eof {
+		if l.next() == eof || l.pos >= len(l.input) {
 			break
 		}
 		l.backup()
@@ -173,7 +185,7 @@ func lexGcy(l *lexer) stateFn {
 }
 
 func lexQuery(l *lexer) stateFn {
-	fmt.Println("lexing query")
+	fmt.Println("lexing start")
 
 	l.acceptRun(markStart)
 	l.emit(itemStart)
@@ -219,17 +231,28 @@ func lexQuery(l *lexer) stateFn {
 	l.acceptRun(markSpace)
 	l.ignore()
 
-	if strings.HasPrefix(l.input[l.pos:], "return") {
-		return lexReturn
-	} else if strings.HasPrefix(l.input[l.pos:], "match") {
-		return lexMatch
-	}
-
-	return nil
+	return lexGcy
 }
 
 func lexMatch(l *lexer) stateFn {
-	return l.errorf("not implemented")
+	fmt.Println("lexing match")
+
+	l.acceptRun("match")
+	l.emit(itemMatch)
+
+	l.skipSpace()
+
+	if l.acceptRun(markIdentifier) > 0 {
+		l.emit(itemVariable)
+		l.skipSpace()
+		l.accept("=")
+		l.skipSpace()
+	}
+
+	l.acceptRun(markSpace)
+	l.ignore()
+
+	return lexGcy
 }
 
 func lexReturn(l *lexer) stateFn {
@@ -327,6 +350,10 @@ type parser struct {
 
 func (p *parser) next() {
 	p.tok = <-p.scanner
+
+	if p.tok.typ == itemError {
+		p.error(p.tok.val)
+	}
 }
 
 func (p *parser) error(msg string) {
@@ -445,8 +472,7 @@ func (p *parser) parseQuery() GcyQuery {
 	return nil
 }
 
-func (p *parser) parse(filename string, src string) GcyQuery {
-	_, channel := lex(filename, src)
+func (p *parser) parse(filename string, channel chan item) GcyQuery {
 	p.scanner = channel
 
 	p.next() // initializes first token
@@ -457,6 +483,13 @@ func (p *parser) parse(filename string, src string) GcyQuery {
 
 func Parse(filename string, src string) (GcyQuery, error) {
 	var p parser
-	grammar := p.parse(filename, src)
-	return grammar, p.errors
+
+	_, channel := lex(filename, src)
+	query := p.parse(filename, channel)
+
+	if query == nil {
+		p.error("Invalid query, Lexing might have failed")
+	}
+
+	return query, p.errors
 }

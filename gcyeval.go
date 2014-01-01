@@ -56,6 +56,9 @@ func (t TabularData) String() string {
 
 	return b.String()
 }
+func (t TabularData) Len() int {
+	return len(t.line)
+}
 
 func (q *searchQuery) evaluate(ctx Context) TabularData {
 

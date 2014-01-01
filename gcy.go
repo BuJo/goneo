@@ -190,29 +190,25 @@ func lexQuery(l *lexer) stateFn {
 	l.acceptRun(markStart)
 	l.emit(itemStart)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 	if l.acceptRun(markIdentifier) < 1 {
 		return l.errorf("expected variable name after start")
 	}
 	l.emit(itemVariable)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 	if !l.accept("=") {
 		return l.errorf("expected assignment after start var")
 	}
 	l.emit(itemAssign)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 	if l.acceptRun(markNode) < 1 {
 		return l.errorf("expected node after start var=")
 	}
 	l.emit(itemNode)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 	if !l.accept(markNodeStart) {
 		return l.errorf("expected ( after start var=node")
 	}
@@ -228,8 +224,7 @@ func lexQuery(l *lexer) stateFn {
 	}
 	l.emit(itemNodeEnd)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 
 	return lexGcy
 }
@@ -238,7 +233,7 @@ func lexMatch(l *lexer) stateFn {
 	fmt.Println("lexing match")
 
 	l.acceptRun("match")
-	l.emit(itemMatch)
+	l.emit(itemMatch)Ï
 
 	l.skipSpace()
 
@@ -249,8 +244,7 @@ func lexMatch(l *lexer) stateFn {
 		l.skipSpace()
 	}
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 
 	return lexGcy
 }
@@ -261,15 +255,13 @@ func lexReturn(l *lexer) stateFn {
 	l.acceptRun(markIdentifier)
 	l.emit(itemReturn)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 	if l.acceptRun(markIdentifier) < 1 {
 		return l.errorf("expected variable name after start")
 	}
 	l.emit(itemVariable)
 
-	l.acceptRun(markSpace)
-	l.ignore()
+	l.skipSpace()
 
 	if l.acceptRun("as") > 0 {
 		l.emit(itemAs)

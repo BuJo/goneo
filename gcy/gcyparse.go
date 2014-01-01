@@ -7,15 +7,12 @@ import (
 )
 
 type (
-	query struct {
-	}
-
-	SearchQuery struct {
-		query
-
+	Query struct {
 		Roots   []*Root
 		Match   *Match
-		Returns []*Return
+		Returns []*Variable
+		Deletes []*Variable
+		Creates []*Variable
 	}
 
 	Root struct {
@@ -25,14 +22,35 @@ type (
 	}
 
 	Match struct {
+		Paths []*Path
 	}
 
-	Return struct {
+	Path struct {
+		Name  string
+		Start *Node
+	}
+
+	Node struct {
+		Name   string
+		Labels []string
+		Props  map[string]string
+
+		LeftRel, RightRel *Relation
+	}
+
+	Relation struct {
+		Name        string
+		Direction   string
+		Types       []string
+		Cardinality string
+
+		LeftNode, RightNode *Node
+	}
+
+	Variable struct {
 		Name  string
 		Alias string
 	}
-
-	GcyQuery interface{}
 )
 
 type errorList []error
@@ -87,23 +105,16 @@ func (p *parser) expectType(tok itemType) {
 	p.next() // make progress in any case
 }
 
-func (p *parser) parseSearchQuery() *SearchQuery {
+func (p *parser) parseStart() []*Root {
 	fmt.Println("parsing search query")
 
-	query := &SearchQuery{}
+	var roots []*Root
 
-	fmt.Println("first in q: ", p.tok)
-	if p.tok.typ == itemStart {
-		p.expect("start")
+	roots = p.parseRoots()
 
-		query.Roots = p.parseRoots()
-	}
+	fmt.Println("returning from search query: ", roots)
 
-	query.Returns = p.parseReturns()
-
-	fmt.Println("returning from search query: ", query)
-
-	return query
+	return roots
 }
 
 func (p *parser) parseRoots() []*Root {
@@ -190,10 +201,8 @@ func (p *parser) parseRoot() (r *Root) {
 
 	return r
 }
-func (p *parser) parseReturns() []*Return {
-	p.expect("return")
-
-	rets := make([]*Return, 0)
+func (p *parser) parseReturns() []*Variable {
+	rets := make([]*Variable, 0)
 
 	varname := p.tok.val
 	alias := varname
@@ -207,42 +216,180 @@ func (p *parser) parseReturns() []*Return {
 		p.expectType(itemIdentifier)
 	}
 
-	rets = append(rets, &Return{varname, alias})
+	rets = append(rets, &Variable{varname, alias})
 
 	return rets
 }
 
-func (p *parser) parseDeleteQuery() *SearchQuery {
+func (p *parser) parseDelete() []*Variable {
 	return nil
 }
 
-func (p *parser) parseCreateQuery() *SearchQuery {
+func (p *parser) parseCreate() []*Variable {
 	return nil
 }
 
-func (p *parser) parseQuery() GcyQuery {
+func (p *parser) parseMatch() *Match {
+	match := new(Match)
 
-	if p.tok.typ == itemStart || p.tok.typ == itemMatch {
-		return p.parseSearchQuery()
-	} else if p.tok.typ == itemDelete {
-		return p.parseDeleteQuery()
-	} else if p.tok.typ == itemCreate {
-		return p.parseCreateQuery()
+	path := new(Path)
+
+	if p.tok.typ == itemLParen {
+		path.Start = p.parsePath()
+	} else {
+		path.Name = p.tok.val
+		p.expectType(itemIdentifier)
+
+		p.expectType(itemEqual)
+
+		path.Start = p.parsePath()
 	}
 
-	return nil
+	match.Paths = append(match.Paths, path)
+
+	return match
 }
 
-func (p *parser) parse(filename string, channel chan item) GcyQuery {
+func (p *parser) parsePath() *Node {
+	node := p.parseNode()
+
+	currentNode := node
+
+	for p.tok.typ == itemLRelDir {
+		currentNode.RightRel = p.parseRelation()
+		currentNode.RightRel.LeftNode = currentNode
+		currentNode.RightRel.RightNode = p.parseNode()
+		currentNode = currentNode.RightRel.RightNode
+	}
+
+	return node
+}
+
+func (p *parser) parseNode() *Node {
+	node := new(Node)
+	p.expectType(itemLParen)
+
+	node.Name = p.tok.val
+	p.expectType(itemIdentifier)
+
+	for p.tok.typ == itemColon {
+		p.expectType(itemColon)
+		node.Labels = append(node.Labels, p.tok.val)
+		p.expectType(itemIdentifier)
+	}
+
+	if p.tok.typ == itemLBrace {
+		p.expectType(itemLBrace)
+
+		for p.tok.typ == itemIdentifier {
+			key := p.tok.val
+			p.expectType(itemIdentifier)
+			p.expectType(itemColon)
+			val := p.tok.val
+			p.expectType(itemIdentifier)
+
+			node.Props[key] = val
+
+			if p.tok.typ != itemComma {
+				break
+			}
+		}
+
+		p.expectType(itemRBrace)
+	}
+
+	p.expectType(itemRParen)
+
+	return node
+}
+
+func (p *parser) parseRelation() *Relation {
+	rel := new(Relation)
+
+	rel.Direction = p.tok.val
+	p.expectType(itemLRelDir)
+
+	if p.tok.typ == itemLBracket {
+		p.expectType(itemLBracket)
+
+		if p.tok.typ == itemIdentifier {
+			rel.Name = p.tok.val
+			p.expectType(itemIdentifier)
+		}
+
+		if p.tok.typ == itemColon {
+			p.expectType(itemColon)
+			rel.Types = make([]string, 1)
+
+			for p.tok.typ == itemIdentifier {
+				rel.Types = append(rel.Types, p.tok.val)
+				p.expectType(itemIdentifier)
+				if p.tok.typ != itemPipe {
+					break
+				}
+				p.expectType(itemPipe)
+			}
+		}
+
+		if p.tok.typ == itemStar {
+			p.expectType(itemStar)
+			// TODO: implement properly
+		}
+
+		p.expectType(itemRBracket)
+	}
+
+	if rel.Direction == "<-" && p.tok.val == "->" {
+		p.error("Relation has to point only in one direction or be undirected")
+	} else if rel.Direction == "-" {
+		rel.Direction = p.tok.val
+	}
+	p.expectType(itemRRelDir)
+
+	return rel
+}
+
+func (p *parser) parseQuery() *Query {
+
+	query := new(Query)
+
+	for p.tok.typ != itemEOF {
+		switch p.tok.typ {
+		case itemStart:
+			p.expect("start")
+			query.Roots = p.parseStart()
+		case itemMatch:
+			p.expect("match")
+			query.Match = p.parseMatch()
+		case itemDelete:
+			p.expect("delete")
+			query.Deletes = p.parseDelete()
+		case itemCreate:
+			p.expect("create")
+			query.Creates = p.parseCreate()
+		case itemReturn:
+			p.expect("return")
+			query.Returns = p.parseReturns()
+		default:
+			p.error("unknown top level type: " + p.tok.String())
+			return nil
+		}
+	}
+
+	return query
+}
+
+func (p *parser) parse(filename string, channel chan item) *Query {
 	p.scanner = channel
 
 	p.next() // initializes first token
 
 	query := p.parseQuery()
+
 	return query
 }
 
-func Parse(filename string, src string) (GcyQuery, error) {
+func Parse(filename string, src string) (*Query, error) {
 	var p parser
 
 	_, channel := lex(filename, src)

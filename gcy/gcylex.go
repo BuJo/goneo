@@ -26,20 +26,21 @@ const (
 	itemLParen
 	itemRParen
 	itemLBrace
-	imteRBrace
+	itemRBrace
 	itemLBracket
 	itemRBracket
 	itemComma
 	itemColon
 	itemEqual
 	itemStar
+	itemPipe
 
 	// ..
 	itemRange
 
 	// Relationship directions
 	itemLRelDir
-	imteRRelDir
+	itemRRelDir
 
 	// Arithmetic
 	itemMinus
@@ -114,7 +115,7 @@ type stateFn func(*lexer) stateFn
 // run executes the lexer
 func (l *lexer) run() {
 	for state := lexGcy; state != nil; {
-		fmt.Printf("state change\n")
+		////fmt.Printf("state change\n")
 		state = state(l)
 	}
 	close(l.items) // no more tokens
@@ -124,7 +125,7 @@ func (l *lexer) run() {
 func (l *lexer) emit(t itemType) {
 	l.items <- item{t, l.input[l.start:l.pos]}
 
-	fmt.Printf("emitted item from %d to %d: %s\n", l.start, l.pos, item{t, l.input[l.start:l.pos]})
+	//fmt.Printf("emitted item from %d to %d: %s\n", l.start, l.pos, item{t, l.input[l.start:l.pos]})
 
 	l.start = l.pos
 }
@@ -160,7 +161,7 @@ func (l *lexer) backup() {
 }
 
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	fmt.Printf("error at: %d(%s)\n", l.pos, l.input[l.pos:])
+	//fmt.Printf("error at: %d(%s)\n", l.pos, l.input[l.pos:])
 	l.items <- item{itemError, fmt.Sprintf(format, args)}
 	return nil
 }
@@ -214,12 +215,6 @@ func (l *lexer) peek() rune {
 	return r
 }
 
-func printEmitted(items chan item) {
-	for i := range items {
-		fmt.Printf("got item: %s\n", i)
-	}
-}
-
 const (
 	markIdentifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 	markNumbers    = "1234567890"
@@ -230,12 +225,12 @@ const (
 
 func lexGcy(l *lexer) stateFn {
 	if l.pos >= len(l.input) {
-		fmt.Println("end lexing Gcy")
+		//fmt.Println("end lexing Gcy")
 		l.emit(itemEOF)
 		return nil
 	}
 
-	fmt.Printf("peek: %c\n", l.peek())
+	//fmt.Printf("peek: %c\n", l.peek())
 
 	switch r := l.next(); {
 	case r == eof || isEndOfLine(r):
@@ -248,6 +243,10 @@ func lexGcy(l *lexer) stateFn {
 		l.emit(itemComma)
 	case r == '*':
 		l.emit(itemStar)
+	case r == ':':
+		l.emit(itemColon)
+	case r == '|':
+		l.emit(itemPipe)
 	case r == '.':
 		if l.peek() == '.' {
 			l.next()
@@ -255,6 +254,19 @@ func lexGcy(l *lexer) stateFn {
 			return lexGcy
 		}
 		return lexField
+	case r == '<':
+		l.next()
+		l.emit(itemLRelDir)
+	case r == '-':
+		p := l.peek()
+		if r == '-' && (p == '[' || p == '(' || p == '-' || p == '>') {
+			if p == '>' {
+				l.next()
+			}
+			l.emit(itemRRelDir)
+			return lexGcy
+		}
+		fallthrough
 	case r == '+' || r == '-' || ('0' <= r && r <= '9'):
 		l.backup()
 		return lexNumber
@@ -272,6 +284,28 @@ func lexGcy(l *lexer) stateFn {
 			return l.errorf("unexpected right paren %#U", r)
 		}
 		return lexGcy
+	case r == '[':
+		l.emit(itemLBracket)
+		l.parenDepth++
+		return lexGcy
+	case r == ']':
+		l.emit(itemRBracket)
+		l.parenDepth--
+		if l.parenDepth < 0 {
+			return l.errorf("unexpected right paren %#U", r)
+		}
+		return lexGcy
+	case r == '{':
+		l.emit(itemLBrace)
+		l.parenDepth++
+		return lexGcy
+	case r == '}':
+		l.emit(itemRBrace)
+		l.parenDepth--
+		if l.parenDepth < 0 {
+			return l.errorf("unexpected right paren %#U", r)
+		}
+		return lexGcy
 	default:
 		return l.errorf("unrecognized character in action: %#U", r)
 	}
@@ -279,7 +313,7 @@ func lexGcy(l *lexer) stateFn {
 }
 
 func lexIdentifier(l *lexer) stateFn {
-	fmt.Println("lexing ident: ", l.input[l.start:l.pos])
+	//fmt.Println("lexing ident: ", l.input[l.start:l.pos])
 
 Loop:
 	for {

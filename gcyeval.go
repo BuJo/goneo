@@ -24,9 +24,9 @@ type (
 		line []map[string]Stringable
 	}
 
-	searchQuery struct{ q *gcy.SearchQuery }
+	searchQuery struct{ q *gcy.Query }
 	root        struct{ r *gcy.Root }
-	returns     struct{ r *gcy.Return }
+	returns     struct{ r *gcy.Variable }
 )
 
 func (t TabularData) String() string {
@@ -146,7 +146,7 @@ func (db *DatabaseService) Evaluate(qry string) (*TabularData, error) {
 	if err != nil {
 		return nil, err
 	}
-	table := (&searchQuery{query.(*gcy.SearchQuery)}).evaluate(evalContext{db: db})
+	table := (&searchQuery{query}).evaluate(evalContext{db: db})
 	if table == nil {
 		return nil, errors.New("Could not evaluate query")
 	}

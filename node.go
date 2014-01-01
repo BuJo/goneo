@@ -17,7 +17,7 @@ type Node struct {
 func (node *Node) String() string {
 	props := " {"
 	for key, val := range node.properties {
-		props += key + ":" + val + ","
+		props += key + ":\"" + val + "\","
 	}
 	props += "}"
 	if len(props) == 3 {

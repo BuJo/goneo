@@ -21,6 +21,7 @@ const (
 	itemField
 
 	itemNumber
+	itemString
 
 	// symbols
 	itemLParen
@@ -45,6 +46,8 @@ const (
 	// Arithmetic
 	itemMinus
 	itemPlus
+
+	itemQuotedString
 
 	// main query block keywords
 	itemKeyword
@@ -247,6 +250,10 @@ func lexGcy(l *lexer) stateFn {
 		l.emit(itemColon)
 	case r == '|':
 		l.emit(itemPipe)
+	case r == '"':
+		return lexQuote
+	case r == '`':
+		return lexQuotedIdentifier
 	case r == '.':
 		if l.peek() == '.' {
 			l.next()
@@ -387,6 +394,46 @@ func lexFieldOrVariable(l *lexer, typ itemType) stateFn {
 		return l.errorf("bad character %#U", r)
 	}
 	l.emit(typ)
+	return lexGcy
+}
+
+// lexQuote scans a quoted string.
+func lexQuote(l *lexer) stateFn {
+Loop:
+	for {
+		switch l.next() {
+		case '\\':
+			if r := l.next(); r != eof && r != '\n' {
+				break
+			}
+			fallthrough
+		case eof, '\n':
+			return l.errorf("unterminated quoted string")
+		case '"':
+			break Loop
+		}
+	}
+	l.emit(itemString)
+	return lexGcy
+}
+
+// lexQuote scans a quoted string.
+func lexQuotedIdentifier(l *lexer) stateFn {
+Loop:
+	for {
+		switch l.next() {
+		case '\\':
+			if r := l.next(); r != eof && r != '\n' {
+				break
+			}
+			fallthrough
+		case eof, '\n':
+			return l.errorf("unterminated quoted identifier")
+		case '`':
+			break Loop
+		}
+	}
+	l.emit(itemIdentifier)
 	return lexGcy
 }
 

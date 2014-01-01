@@ -247,6 +247,8 @@ func (p *parser) parseMatch() *Match {
 
 	match.Paths = append(match.Paths, path)
 
+	fmt.Println("added path to paths: ", match.Paths)
+
 	return match
 }
 
@@ -256,10 +258,15 @@ func (p *parser) parsePath() *Node {
 	currentNode := node
 
 	for p.tok.typ == itemLRelDir {
-		currentNode.RightRel = p.parseRelation()
-		currentNode.RightRel.LeftNode = currentNode
-		currentNode.RightRel.RightNode = p.parseNode()
+		rel := p.parseRelation()
+		rel.LeftNode = currentNode
+		rel.RightNode = p.parseNode()
+
+		currentNode.RightRel = rel
+
 		currentNode = currentNode.RightRel.RightNode
+
+		currentNode.LeftRel = rel
 	}
 
 	return node
@@ -286,7 +293,7 @@ func (p *parser) parseNode() *Node {
 			p.expectType(itemIdentifier)
 			p.expectType(itemColon)
 			val := p.tok.val
-			p.expectType(itemIdentifier)
+			p.expectType(itemString)
 
 			node.Props[key] = val
 

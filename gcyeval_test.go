@@ -35,7 +35,7 @@ func TestTagged(t *testing.T) {
 		return
 	}
 	if table.Len() != 2 {
-		t.Skipf("Evaluation not implemented")
+		t.Error("Evaluation not implemented")
 	}
 }
 

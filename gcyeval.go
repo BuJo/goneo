@@ -5,13 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"goneo/gcy"
+	"goneo/sgi"
 	"text/tabwriter"
 )
 
 type (
 	evalContext struct {
-		vars  map[string][]PropertyContainer
-		paths map[string][]Path
+		vars map[string][]PropertyContainer
+
+		subgraphNameMap    map[string]int
+		subgraphRevNameMap map[int]string
+
+		subgraph *dbGraph
 
 		db *DatabaseService
 	}
@@ -24,9 +29,10 @@ type (
 		line []map[string]Stringable
 	}
 
-	searchQuery struct{ q *gcy.Query }
-	root        struct{ r *gcy.Root }
-	returns     struct{ r *gcy.Variable }
+	query   struct{ q *gcy.Query }
+	match   struct{ m *gcy.Match }
+	root    struct{ r *gcy.Root }
+	returns struct{ r *gcy.Variable }
 )
 
 func (t TabularData) String() string {
@@ -65,13 +71,18 @@ func (t TabularData) Len() int {
 	return len(t.line)
 }
 
-func (q *searchQuery) evaluate(ctx evalContext) *TabularData {
+func (q *query) evaluate(ctx evalContext) *TabularData {
 
 	ctx.vars = make(map[string][]PropertyContainer)
-	ctx.paths = make(map[string][]Path)
+	ctx.subgraphNameMap = make(map[string]int)
+	ctx.subgraphRevNameMap = make(map[int]string)
 
 	for _, r := range q.q.Roots {
 		(&root{r}).evaluate(ctx)
+	}
+
+	if q.q.Match != nil {
+		(&match{q.q.Match}).evaluate(ctx)
 	}
 
 	table := &TabularData{}
@@ -81,6 +92,81 @@ func (q *searchQuery) evaluate(ctx evalContext) *TabularData {
 	}
 
 	return table
+}
+
+// BUG(jo): db cannot ancode undirected graph
+// BUG(jo): cannot encode more than one possible relation type
+
+func (mm *match) evaluate(ctx evalContext) *TabularData {
+	m := mm.m
+
+	subgraph := NewTemporaryDb()
+
+	for _, p := range m.Paths {
+		var builder *PathBuilder
+		for currentNode := p.Start; currentNode != nil; {
+			var n *Node
+
+			if currentNode.Name != "" {
+
+				if id, ok := ctx.subgraphNameMap[currentNode.Name]; ok {
+					n, _ = subgraph.GetNode(id)
+					fmt.Println("tried to find node name ", currentNode.Name, ", found", n)
+				}
+			}
+
+			if n == nil {
+				n = subgraph.NewNode(currentNode.Labels...)
+				ctx.subgraphNameMap[currentNode.Name] = n.Id()
+				ctx.subgraphRevNameMap[n.Id()] = currentNode.Name
+
+				fmt.Println("created new node: ", n, "(", currentNode, ")")
+
+				for k, v := range currentNode.Props {
+					n.SetProperty(k, v)
+				}
+			}
+
+			if builder == nil {
+				fmt.Println("first run, node: ", n, "(", currentNode, ")")
+				builder = NewPathBuilder(n)
+			} else {
+				prevNode := builder.Last()
+				fmt.Println("next run, ", prevNode, "->", n, "(", currentNode, ")")
+
+				// TODO: utter crap, path is specific, has no "optional variants"
+				// TODO: utter crap, db relations have no "optional variants"
+				for _, typ := range currentNode.LeftRel.Types {
+					rel := prevNode.RelateTo(n, typ)
+
+					builder = builder.Append(rel)
+					break
+				}
+			}
+
+			if currentNode.RightRel == nil {
+				currentNode = nil
+			} else {
+
+				currentNode = currentNode.RightRel.RightNode
+			}
+		}
+	}
+
+	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db})
+
+	for q, t := range mappings {
+		name := ctx.subgraphRevNameMap[q]
+		node, _ := ctx.db.GetNode(t)
+
+		if _, ok := ctx.vars[name]; !ok {
+			ctx.vars[name] = make([]PropertyContainer, 1)
+		}
+
+		ctx.vars[name] = append(ctx.vars[name], node)
+	}
+
+	return nil
 }
 
 func (rr *root) evaluate(ctx evalContext) *TabularData {
@@ -142,14 +228,76 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 //
 // 	start n=node(*) return n
 func (db *DatabaseService) Evaluate(qry string) (*TabularData, error) {
-	query, err := gcy.Parse("goneo", qry)
+	q, err := gcy.Parse("goneo", qry)
 	if err != nil {
 		return nil, err
 	}
-	table := (&searchQuery{query}).evaluate(evalContext{db: db})
+	table := (&query{q}).evaluate(evalContext{db: db})
 	if table == nil {
 		return nil, errors.New("Could not evaluate query")
 	}
 
 	return table, nil
+}
+
+type dbGraph struct {
+	db *DatabaseService
+}
+
+func (g *dbGraph) Order() int {
+	return len(g.db.GetAllNodes())
+}
+
+func (g *dbGraph) GetEdges() []sgi.Edge {
+	rels := g.db.GetAllRelations()
+	edges := make([]sgi.Edge, len(rels), len(rels))
+
+	for i, r := range rels {
+		edges[i] = r
+	}
+	return edges
+}
+func (g *dbGraph) Contains(a, b int) bool {
+	//fmt.Println("gr:Contains:",a,b)
+	node, _ := g.db.GetNode(a)
+	for _, rel := range node.Relations(Outgoing) {
+		if rel.End.Id() == b {
+			return true
+		}
+	}
+	return false
+}
+func (g *dbGraph) Successors(a int) []int {
+
+	node, _ := g.db.GetNode(a)
+	ids := make([]int, 0)
+	for _, rel := range node.Relations(Outgoing) {
+		ids = append(ids, rel.End.Id())
+	}
+	//fmt.Println("gr:succ:",a,ids)
+	return ids
+}
+func (g *dbGraph) Predecessors(a int) []int {
+
+	node, _ := g.db.GetNode(a)
+	ids := make([]int, 0)
+	for _, rel := range node.Relations(Incoming) {
+		ids = append(ids, rel.Start.Id())
+	}
+	//fmt.Println("gr:Pred:",a,ids)
+	return ids
+}
+func (g *dbGraph) Relations(a int) []int {
+
+	node, _ := g.db.GetNode(a)
+	ids := make([]int, 0)
+	for _, rel := range node.Relations(Both) {
+		if rel.Start.Id() == a {
+			ids = append(ids, rel.End.Id())
+		} else {
+			ids = append(ids, rel.Start.Id())
+		}
+	}
+	fmt.Println("gr:Rel:", a, ids)
+	return ids
 }

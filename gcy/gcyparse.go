@@ -3,10 +3,8 @@ package gcy
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
-
-// ----------------------------------------------------------------------------
-// Internal representation
 
 type (
 	query struct {
@@ -21,9 +19,9 @@ type (
 	}
 
 	Root struct {
-		Name    string
-		Typ     string
-		IdRange string
+		Name   string
+		Typ    string
+		IdVars []int
 	}
 
 	Match struct {
@@ -84,7 +82,7 @@ func (p *parser) expect(tok string) {
 }
 func (p *parser) expectType(tok itemType) {
 	if p.tok.typ != tok {
-		p.errorExpected("expected type, got type")
+		p.errorExpected(fmt.Sprintf("%s, got %s", item{typ: tok}, p.tok))
 	}
 	p.next() // make progress in any case
 }
@@ -118,24 +116,76 @@ func (p *parser) parseRoots() []*Root {
 
 func (p *parser) parseRoot() (r *Root) {
 	varname := p.tok.val
-	p.expectType(itemVariable)
-	p.expectType(itemAssign)
+	p.expectType(itemIdentifier)
+	p.expectType(itemEqual)
 
 	r = &Root{Name: varname}
 
-	if p.tok.val == "node" {
+	switch p.tok.val {
+	case "node", "relation":
+		typ := p.tok.val
+		p.expect(typ)
+		p.expect("(")
+
+		r.Typ = typ
+
+	Loop:
+		for {
+			var err error
+
+			switch p.tok.typ {
+			case itemRange:
+				start, end := 0, 0
+				p.expectType(itemRange)
+				end, err = strconv.Atoi(p.tok.val)
+				if err != nil {
+					p.error(err.Error())
+				}
+				p.expectType(itemNumber)
+
+				for i := start; i < end; i += 1 {
+					r.IdVars = append(r.IdVars, i)
+				}
+			case itemNumber:
+				start, end := 0, 0
+				start, err = strconv.Atoi(p.tok.val)
+				if err != nil {
+					p.error(err.Error())
+				}
+				p.expectType(itemNumber)
+
+				end = start
+
+				if p.tok.typ == itemRange {
+					p.expectType(itemRange)
+					end, err = strconv.Atoi(p.tok.val)
+					if err != nil {
+						p.error(err.Error())
+					}
+					p.expectType(itemNumber)
+
+				}
+				for i := start; i < end; i += 1 {
+					r.IdVars = append(r.IdVars, i)
+				}
+			case itemStar:
+				p.expectType(itemStar)
+				r.IdVars = append(r.IdVars, -1)
+
+			default:
+				break Loop
+			}
+			if p.tok.typ == itemComma {
+				p.expectType(itemComma)
+				continue
+			}
+			break
+		}
+
+	default:
 		p.expect("node")
-		p.expect("(")
-		r.Typ = "node"
-		r.IdRange = p.tok.val
-		p.expectType(itemRange)
-	} else {
-		p.expect("relation")
-		p.expect("(")
-		r.Typ = "relation"
-		r.IdRange = p.tok.val
-		p.expectType(itemRange)
 	}
+
 	p.expect(")")
 
 	return r
@@ -147,14 +197,14 @@ func (p *parser) parseReturns() []*Return {
 
 	varname := p.tok.val
 	alias := varname
-	p.expectType(itemVariable)
+	p.expectType(itemIdentifier)
 
 	if p.tok.typ == itemAs {
 		p.expectType(itemAs)
 
 		alias = p.tok.val
 
-		p.expectType(itemVariable)
+		p.expectType(itemIdentifier)
 	}
 
 	rets = append(rets, &Return{varname, alias})
@@ -200,6 +250,10 @@ func Parse(filename string, src string) (GcyQuery, error) {
 
 	if query == nil {
 		p.error("Invalid query, Lexing might have failed")
+	}
+
+	if len(p.errors) == 0 {
+		return query, nil
 	}
 
 	return query, p.errors

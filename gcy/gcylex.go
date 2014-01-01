@@ -2,7 +2,9 @@ package gcy
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -13,37 +15,86 @@ type item struct {
 }
 
 const (
-	itemError itemType = iota // error, val contains description
+	itemError itemType = iota
+
+	itemIdentifier
+	itemField
+
+	itemNumber
+
+	// symbols
+	itemLParen
+	itemRParen
+	itemLBrace
+	imteRBrace
+	itemLBracket
+	itemRBracket
+	itemComma
+	itemColon
+	itemEqual
+	itemStar
+
+	// ..
+	itemRange
+
+	// Relationship directions
+	itemLRelDir
+	imteRRelDir
+
+	// Arithmetic
+	itemMinus
+	itemPlus
+
+	// main query block keywords
+	itemKeyword
 	itemStart
 	itemCreate
 	itemDelete
 	itemMatch
-	itemAs
 	itemReturn
-	itemNode
-	itemNodeStart
-	itemNodeEnd
-	itemNodeId
-	itemRelStart
-	itemRelEnd
-	itemRelDirection
-	itemAssign
-	itemVariable
-	itemRange
+	itemWith
+	itemAs
+
 	itemEOF
 )
 
+var key = map[string]itemType{
+	"start":  itemStart,
+	"create": itemCreate,
+	"delete": itemDelete,
+	"match":  itemMatch,
+	"return": itemReturn,
+	"with":   itemWith,
+	"as":     itemAs,
+}
+
+// (partial) Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 func (i item) String() string {
-	switch i.typ {
-	case itemEOF:
+	switch {
+	case i.typ == itemEOF:
 		return "EOF"
-	case itemError:
+	case i.typ == itemError:
 		return i.val
-	}
-	if len(i.val) > 10 {
+	case i.typ == itemNumber:
+		if i, e := strconv.ParseInt(i.val, 0, 64); e == nil {
+			return fmt.Sprintf("%d", i)
+		}
+		if f, e := strconv.ParseFloat(i.val, 64); e == nil {
+			return fmt.Sprintf("%f", f)
+		}
+	case i.typ > itemKeyword:
+		return fmt.Sprintf("<%s>", i.val)
+	case len(i.val) > 10:
 		return fmt.Sprintf("%.10q...", i.val)
 	}
-	return fmt.Sprintf("%q", i.val)
+	s := fmt.Sprintf("%q", i.val)
+	if len(s) == 0 || s == "\"\"" {
+		s = fmt.Sprintf("[%d]", i.typ)
+	}
+	return s
 }
 
 type lexer struct {
@@ -53,6 +104,8 @@ type lexer struct {
 	pos   int       // current position in input
 	width int       // width of last item read
 	items chan item // channel of scanned items
+
+	parenDepth int
 }
 
 // represents the state of the scanner as a function returning the next state
@@ -135,11 +188,30 @@ func (l *lexer) acceptUntil(valid string) bool {
 }
 func (l *lexer) skipSpace() bool {
 	numSkipped := l.acceptRun(markSpace)
+	l.ignore()
 	if numSkipped > 0 {
-		l.ignore()
 		return true
 	}
 	return false
+}
+func (l *lexer) atBoundary() bool {
+	r := l.peek()
+	if isSpace(r) || isEndOfLine(r) {
+		return true
+	}
+	switch r {
+	case eof, '.', ',', '|', ':', ')', '(', '{', '}', '[', ']', '=', '*', 0xFFFD:
+		return true
+	}
+
+	return false
+}
+
+// peek returns but does not consume the next rune in the input.
+func (l *lexer) peek() rune {
+	r := l.next()
+	l.backup()
+	return r
 }
 
 func printEmitted(items chan item) {
@@ -149,130 +221,195 @@ func printEmitted(items chan item) {
 }
 
 const (
-	markIdentifier = "abcdefghijklmnopqrstuvwxyz_"
+	markIdentifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 	markNumbers    = "1234567890"
-	markRange      = "1234567890*."
-	markNodeStart  = "("
-	markNodeEnd    = ")"
-	markStart      = "start"
-	markNode       = "node"
 	markSpace      = "\n 	"
 	markEOL        = "\n"
 	eof            = 0
 )
 
 func lexGcy(l *lexer) stateFn {
-	fmt.Println("lexing Gcy")
+	if l.pos >= len(l.input) {
+		fmt.Println("end lexing Gcy")
+		l.emit(itemEOF)
+		return nil
+	}
 
-	for {
-		if strings.HasPrefix(l.input[l.pos:], "start") {
-			return lexQuery
-		} else if strings.HasPrefix(l.input[l.pos:], "return") {
-			return lexReturn
-		} else if strings.HasPrefix(l.input[l.pos:], "match") {
-			return lexMatch
+	fmt.Printf("peek: %c\n", l.peek())
+
+	switch r := l.next(); {
+	case r == eof || isEndOfLine(r):
+		return l.errorf("unclosed action")
+	case isSpace(r):
+		return lexSpace
+	case r == '=':
+		l.emit(itemEqual)
+	case r == ',':
+		l.emit(itemComma)
+	case r == '*':
+		l.emit(itemStar)
+	case r == '.':
+		if l.peek() == '.' {
+			l.next()
+			l.emit(itemRange)
+			return lexGcy
 		}
+		return lexField
+	case r == '+' || r == '-' || ('0' <= r && r <= '9'):
+		l.backup()
+		return lexNumber
+	case isAlphaNumeric(r):
+		l.backup()
+		return lexIdentifier
+	case r == '(':
+		l.emit(itemLParen)
+		l.parenDepth++
+		return lexGcy
+	case r == ')':
+		l.emit(itemRParen)
+		l.parenDepth--
+		if l.parenDepth < 0 {
+			return l.errorf("unexpected right paren %#U", r)
+		}
+		return lexGcy
+	default:
+		return l.errorf("unrecognized character in action: %#U", r)
+	}
+	return lexGcy
+}
 
-		if l.next() == eof || l.pos >= len(l.input) {
+func lexIdentifier(l *lexer) stateFn {
+	fmt.Println("lexing ident: ", l.input[l.start:l.pos])
+
+Loop:
+	for {
+		switch r := l.next(); {
+		case isAlphaNumeric(r):
+			// absorb.
+		default:
+			l.backup()
+			word := l.input[l.start:l.pos]
+			if !l.atBoundary() {
+				return l.errorf("bad character %#U", r)
+			}
+			switch {
+			case key[word] > itemKeyword:
+				l.emit(key[word])
+			case word[0] == '.':
+				l.emit(itemField)
+			default:
+				l.emit(itemIdentifier)
+			}
+			break Loop
+		}
+	}
+
+	return lexGcy
+}
+
+// lexSpace scans a run of space characters.
+// One space has already been seen.
+func lexSpace(l *lexer) stateFn {
+	l.skipSpace()
+	return lexGcy
+}
+
+// lexField scans a field: .Alphanumeric.
+// The . has been scanned.
+func lexField(l *lexer) stateFn {
+	return lexFieldOrVariable(l, itemField)
+}
+
+// lexVariable scans a Variable: $Alphanumeric.
+// The $ has been scanned.
+func lexVariable(l *lexer) stateFn {
+	if l.atBoundary() { // Nothing interesting follows -> "$".
+		l.emit(itemIdentifier)
+		return lexGcy
+	}
+	return lexFieldOrVariable(l, itemIdentifier)
+}
+
+// lexVariable scans a field or variable: [.$]Alphanumeric.
+// The . or $ has been scanned.
+func lexFieldOrVariable(l *lexer, typ itemType) stateFn {
+	if l.atBoundary() { // Nothing interesting follows -> "." or "$".
+		if typ == itemIdentifier {
+			l.emit(itemIdentifier)
+		} else {
+			l.emit(itemIdentifier)
+		}
+		return lexGcy
+	}
+	var r rune
+	for {
+		r = l.next()
+		if !isAlphaNumeric(r) {
+			l.backup()
 			break
 		}
-		l.backup()
-		fmt.Printf("itm:%q\n", l.next())
 	}
-	l.emit(itemEOF)
-	return nil
-}
-
-func lexQuery(l *lexer) stateFn {
-	fmt.Println("lexing start")
-
-	l.acceptRun(markStart)
-	l.emit(itemStart)
-
-	l.skipSpace()
-	if l.acceptRun(markIdentifier) < 1 {
-		return l.errorf("expected variable name after start")
+	if !l.atBoundary() {
+		return l.errorf("bad character %#U", r)
 	}
-	l.emit(itemVariable)
-
-	l.skipSpace()
-	if !l.accept("=") {
-		return l.errorf("expected assignment after start var")
-	}
-	l.emit(itemAssign)
-
-	l.skipSpace()
-	if l.acceptRun(markNode) < 1 {
-		return l.errorf("expected node after start var=")
-	}
-	l.emit(itemNode)
-
-	l.skipSpace()
-	if !l.accept(markNodeStart) {
-		return l.errorf("expected ( after start var=node")
-	}
-	l.emit(itemNodeStart)
-
-	if l.acceptRun(markRange) < 1 {
-		return l.errorf("expected node id/range after start var=node(")
-	}
-	l.emit(itemRange)
-
-	if !l.accept(markNodeEnd) {
-		return l.errorf("expected ) after start var=node(id")
-	}
-	l.emit(itemNodeEnd)
-
-	l.skipSpace()
-
+	l.emit(typ)
 	return lexGcy
 }
 
-func lexMatch(l *lexer) stateFn {
-	fmt.Println("lexing match")
-
-	l.acceptRun("match")
-	l.emit(itemMatch)
-
-	l.skipSpace()
-
-	if l.acceptRun(markIdentifier) > 0 {
-		l.emit(itemVariable)
-		l.skipSpace()
-		l.accept("=")
-		l.skipSpace()
+// lexNumber scans a number: decimal, octal, hex, float, or imaginary. This
+// isn't a perfect number scanner - for instance it accepts "." and "0x0.2"
+// and "089" - but when it's wrong the input is invalid and the parser (via
+// strconv) will notice.
+func lexNumber(l *lexer) stateFn {
+	if !l.scanNumber() {
+		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
-
-	l.skipSpace()
-
+	l.emit(itemNumber)
 	return lexGcy
 }
 
-func lexReturn(l *lexer) stateFn {
-	fmt.Println("lexing Return")
-
-	l.acceptRun(markIdentifier)
-	l.emit(itemReturn)
-
-	l.skipSpace()
-	if l.acceptRun(markIdentifier) < 1 {
-		return l.errorf("expected variable name after start")
+func (l *lexer) scanNumber() bool {
+	// Optional leading sign.
+	l.accept("+-")
+	// Is it hex?
+	digits := "0123456789"
+	if l.accept("0") && l.accept("xX") {
+		digits = "0123456789abcdefABCDEF"
 	}
-	l.emit(itemVariable)
-
-	l.skipSpace()
-
-	if l.acceptRun("as") > 0 {
-		l.emit(itemAs)
-		l.acceptRun(markSpace)
-		l.ignore()
-		if l.acceptRun(markIdentifier) < 1 {
-			return l.errorf("expected variable name after start")
+	l.acceptRun(digits)
+	if l.accept(".") {
+		// special case for ranges
+		if l.peek() == '.' {
+			l.backup()
+		} else {
+			l.acceptRun(digits)
 		}
-		l.emit(itemVariable)
 	}
+	if l.accept("eE") {
+		l.accept("+-")
+		l.acceptRun("0123456789")
+	}
+	// Is it imaginary?
+	l.accept("i")
+	// Next thing mustn't be alphanumeric.
+	if isAlphaNumeric(l.peek()) {
+		l.next()
+		return false
+	}
+	return true
+}
 
-	l.emit(eof)
+// isSpace reports whether r is a space character.
+func isSpace(r rune) bool {
+	return r == ' ' || r == '\t'
+}
 
-	return nil
+// isEndOfLine reports whether r is an end-of-line character.
+func isEndOfLine(r rune) bool {
+	return r == '\r' || r == '\n'
+}
+
+// isAlphaNumeric reports whether r is an alphabetic, digit, or underscore.
+func isAlphaNumeric(r rune) bool {
+	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
 }

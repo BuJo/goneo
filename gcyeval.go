@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"goneo/gcy"
-	"strconv"
 	"text/tabwriter"
 )
 
 type (
-	Context struct {
+	evalContext struct {
 		vars  map[string][]PropertyContainer
 		paths map[string][]Path
 
@@ -66,7 +65,7 @@ func (t TabularData) Len() int {
 	return len(t.line)
 }
 
-func (q *searchQuery) evaluate(ctx Context) *TabularData {
+func (q *searchQuery) evaluate(ctx evalContext) *TabularData {
 
 	ctx.vars = make(map[string][]PropertyContainer)
 	ctx.paths = make(map[string][]Path)
@@ -84,7 +83,7 @@ func (q *searchQuery) evaluate(ctx Context) *TabularData {
 	return table
 }
 
-func (rr *root) evaluate(ctx Context) *TabularData {
+func (rr *root) evaluate(ctx evalContext) *TabularData {
 	r := rr.r
 	_, ok := ctx.vars[r.Name]
 
@@ -93,25 +92,32 @@ func (rr *root) evaluate(ctx Context) *TabularData {
 	}
 
 	if r.Typ == "node" {
-
-		if r.IdRange == "*" {
+		if len(r.IdVars) == 1 && r.IdVars[0] == -1 {
 			for _, node := range ctx.db.GetAllNodes() {
 				ctx.vars[r.Name] = append(ctx.vars[r.Name], node)
 			}
 		} else {
-			id, _ := strconv.Atoi(r.IdRange)
-			node, _ := ctx.db.GetNode(id)
-			ctx.vars[r.Name] = append(ctx.vars[r.Name], node)
+			for _, id := range r.IdVars {
+				node, _ := ctx.db.GetNode(id)
+				ctx.vars[r.Name] = append(ctx.vars[r.Name], node)
+			}
 		}
 	} else {
-		id, _ := strconv.Atoi(r.IdRange)
-		rel, _ := ctx.db.GetRelation(id)
-		ctx.vars[r.Name] = append(ctx.vars[r.Name], rel)
+		if len(r.IdVars) == 1 && r.IdVars[0] == -1 {
+			for _, rel := range ctx.db.GetAllRelations() {
+				ctx.vars[r.Name] = append(ctx.vars[r.Name], rel)
+			}
+		} else {
+			for _, id := range r.IdVars {
+				rel, _ := ctx.db.GetRelation(id)
+				ctx.vars[r.Name] = append(ctx.vars[r.Name], rel)
+			}
+		}
 	}
 
 	return &TabularData{}
 }
-func (rr *returns) evaluate(ctx Context) *TabularData {
+func (rr *returns) evaluate(ctx evalContext) *TabularData {
 	r := rr.r
 	table := &TabularData{}
 
@@ -130,12 +136,17 @@ func (rr *returns) evaluate(ctx Context) *TabularData {
 	return table
 }
 
+//Evaluate a gcy query
+//
+// Example:
+//
+// 	start n=node(*) return n
 func (db *DatabaseService) Evaluate(qry string) (*TabularData, error) {
 	query, err := gcy.Parse("goneo", qry)
 	if err != nil {
 		return nil, err
 	}
-	table := (&searchQuery{query.(*gcy.SearchQuery)}).evaluate(Context{db: db})
+	table := (&searchQuery{query.(*gcy.SearchQuery)}).evaluate(evalContext{db: db})
 	if table == nil {
 		return nil, errors.New("Could not evaluate query")
 	}

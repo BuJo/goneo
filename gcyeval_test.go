@@ -1,17 +1,20 @@
 package goneo
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestBasicStartQuery(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	query, err := Parse("gcy", "start n=node(*) return n as node")
-	fmt.Println(err)
-	table := query.evaluate(Context{db: db})
-	fmt.Println(table)
+	table, err := db.Evaluate("start n=node(*) return n as node")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if table.Len() != 2 {
+		t.Error(table)
+	}
 }
 
 func TestUniverse(t *testing.T) {
@@ -26,13 +29,12 @@ func TestUniverse(t *testing.T) {
 
 func TestTagged(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
-
-	query, err := Parse("match", "match (n:Tag)<-[:TAGGED_BY]-(v) return v")
+	
+	table, err := db.Evaluate("match (n:Tag)<-[:TAGGED_BY]-(v) return v")
 	if err != nil {
 		t.Skipf("%s", err)
 		return
 	}
-	table := query.evaluate(Context{db: db})
 	if table.Len() != 2 {
 		t.Error(table)
 	}

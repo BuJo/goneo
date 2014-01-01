@@ -5,12 +5,13 @@ import (
 	"testing"
 )
 
-func TestBasic(t *testing.T) {
+func TestBasicStartQuery(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
 	query, err := Parse("gcy", "start n=node(*) return n as node")
 	fmt.Println(err)
 	table := query.evaluate(Context{db: db})
 	fmt.Println(table)
-	
 }
 
 func TestUniverse(t *testing.T) {
@@ -20,27 +21,21 @@ func TestUniverse(t *testing.T) {
 	if len(creators) != 1 {
 		t.Fail()
 	}
+
 }
 
 func TestTagged(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	query, err := Parse("allnods", "start n=node(*) return n as node")
+	query, err := Parse("match", "match (n:Tag)<-[:TAGGED_BY]-(v) return v")
 	if err != nil {
-		t.Error(err)
+		t.Skipf("%s", err)
+		return
 	}
 	table := query.evaluate(Context{db: db})
-	fmt.Println(table)
-	/*
-		query, err = Parse("taggedby", "match (n:Tag)<-[:TAGGED_BY]-(v) return v")
-		if err != nil {
-			t.Fatal(err)
-		}
-		table = query.evaluate(Context{db: db})
-		if table.Len() != 2 {
-				fmt.Println(table)
-		}
-	*/
+	if table.Len() != 2 {
+		t.Error(table)
+	}
 }
 
 type UniverseGenerator struct {

@@ -233,7 +233,7 @@ func lexMatch(l *lexer) stateFn {
 	fmt.Println("lexing match")
 
 	l.acceptRun("match")
-	l.emit(itemMatch)Ï
+	l.emit(itemMatch)
 
 	l.skipSpace()
 

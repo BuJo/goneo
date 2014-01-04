@@ -36,6 +36,20 @@ func DirectionFromString(str string) Direction {
 	return Both
 }
 
+
+func (d Direction) String() string {
+	switch d {
+	case Both:
+		return "-"
+	case Incoming:
+		return "<-"
+	case Outgoing:
+		return "->"
+	default:
+		return ""
+	}
+}
+
 func (rel *Relation) Type() string {
 	return rel.typ
 }

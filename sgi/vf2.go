@@ -13,6 +13,9 @@ type vf2State struct {
 
 	// q ~> t
 	mapping map[int]int
+
+	// Fsem
+	isSemanticallyFeasable SemFeasFunc
 }
 type vf2Match struct {
 	query, target int
@@ -72,6 +75,21 @@ func (state *vf2State) clearMapping() {
 
 func (state *vf2State) IsFeasablePair(queryNode, targetNode int) bool {
 
+	fSyn := state.isSyntacticallyFeasable(queryNode, targetNode)
+
+	fSem := true
+
+	if fSyn && len(state.queryPath) > 0 {
+		fmt.Printf("(%d,%d)~>(%d,%d) is syntactically feasable, sem: ", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+
+		fSem = state.isSemanticallyFeasable(state, state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+	}
+
+	return fSyn && fSem
+}
+
+func (state *vf2State) isSyntacticallyFeasable(queryNode, targetNode int) bool {
+
 	// Already mapped
 	if _, ok := state.mapping[queryNode]; ok {
 		return false
@@ -111,6 +129,7 @@ func (state *vf2State) IsFeasablePair(queryNode, targetNode int) bool {
 
 	return true
 }
+
 func (state *vf2State) isFeasableCandidate(queryNode, targetNode int) bool {
 	// Test: not already visited
 	for q, _ := range state.mapping {
@@ -156,6 +175,8 @@ func (state *vf2State) NextState(queryNode, targetNode int) State {
 	next.candidates = make([]vf2Match, 0, next.query.Order())
 	next.loadCandidates(queryNode, targetNode)
 
+	next.isSemanticallyFeasable = state.isSemanticallyFeasable
+
 	return next
 }
 
@@ -193,7 +214,7 @@ func (state *vf2State) loadCandidates(queryNode, targetNode int) {
 	fmt.Println("loaded new candidates: ", state.candidates)
 }
 
-func newVF2State(query, target Graph) State {
+func newVF2State(query, target Graph, fsem SemFeasFunc) State {
 	state := new(vf2State)
 
 	state.mapping = make(map[int]int, query.Order())
@@ -205,11 +226,21 @@ func newVF2State(query, target Graph) State {
 	state.queryPath = make([]int, 0, query.Order())
 	state.targetPath = make([]int, 0, target.Order())
 
+	if fsem != nil {
+		fmt.Println("custom Fsem")
+		state.isSemanticallyFeasable = fsem
+	} else {
+		fmt.Println("always true Fsem")
+		state.isSemanticallyFeasable = func(s State, a, b, c, d int) bool { return true }
+	}
+
 	state.loadRootCandidates()
 
 	return state
 }
 
-func FindVF2SubgraphIsomorphism(query, target Graph) map[int]int {
-	return FindIsomorphism(query, target, newVF2State)
+func FindVF2SubgraphIsomorphism(query, target Graph, fsem SemFeasFunc) map[int]int {
+	state := newVF2State(query, target, fsem)
+
+	return FindIsomorphism(state)
 }

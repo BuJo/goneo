@@ -326,7 +326,7 @@ func (p *parser) parseRelation() *Relation {
 
 		if p.tok.typ == itemColon {
 			p.expectType(itemColon)
-			rel.Types = make([]string, 1)
+			rel.Types = make([]string, 0, 1)
 
 			for p.tok.typ == itemIdentifier {
 				rel.Types = append(rel.Types, p.tok.val)

@@ -138,6 +138,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				// TODO: utter crap, db relations have no "optional variants"
 				for _, typ := range currentNode.LeftRel.Types {
 					rel := prevNode.RelateTo(n, typ)
+					//fmt.Println("____ created new subgraph rel: ", rel, currentNode.LeftRel)
 
 					builder = builder.Append(rel)
 					break
@@ -153,7 +154,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 		}
 	}
 
-	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db})
+	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db}, isSemanticallyFeasable)
 
 	for q, t := range mappings {
 		name := ctx.subgraphRevNameMap[q]
@@ -240,6 +241,43 @@ func (db *DatabaseService) Evaluate(qry string) (*TabularData, error) {
 	return table, nil
 }
 
+// defines semantic feasability of the given state M(s) and n' m'
+func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool {
+	graph := state.GetGraph().(*dbGraph).db
+	subgraph := state.GetSubgraph().(*dbGraph).db
+
+	q1, _ := subgraph.GetNode(fromQueryNode)
+	q2, _ := subgraph.GetNode(toQueryNode)
+	t1, _ := graph.GetNode(fromTargetNode)
+	t2, _ := graph.GetNode(toTargetNode)
+
+	// query relation
+	qRel, qDir := &Relation{}, Both
+	for _, rel := range q1.Relations(Both) {
+		if rel.Start.Id() == q1.Id() && rel.End.Id() == q2.Id() {
+			qRel, qDir = rel, Outgoing
+		} else if rel.End.Id() == q1.Id() && rel.Start.Id() == q2.Id() {
+			qRel, qDir = rel, Incoming
+		}
+	}
+
+	// target relation
+	tRel, tDir := &Relation{}, Both
+	for _, rel := range t1.Relations(Both) {
+		if rel.Start.Id() == t1.Id() && rel.End.Id() == t2.Id() {
+			tRel, tDir = rel, Outgoing
+		} else if rel.End.Id() == t1.Id() && rel.Start.Id() == t2.Id() {
+			tRel, tDir = rel, Incoming
+		}
+	}
+
+	fmt.Printf("queryNodes: %s,%s , targetNodes: %s,%s | ", q1, q2, t1, t2)
+	//fmt.Printf("rel: (%s~>%s), dir: (%s~>%s) \n", qRel.Type(), tRel.Type(), qDir, tDir)
+	fmt.Println(qRel, tRel)
+
+	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir)
+}
+
 type dbGraph struct {
 	db *DatabaseService
 }
@@ -248,15 +286,6 @@ func (g *dbGraph) Order() int {
 	return len(g.db.GetAllNodes())
 }
 
-func (g *dbGraph) GetEdges() []sgi.Edge {
-	rels := g.db.GetAllRelations()
-	edges := make([]sgi.Edge, len(rels), len(rels))
-
-	for i, r := range rels {
-		edges[i] = r
-	}
-	return edges
-}
 func (g *dbGraph) Contains(a, b int) bool {
 	//fmt.Println("gr:Contains:",a,b)
 	node, _ := g.db.GetNode(a)
@@ -298,6 +327,6 @@ func (g *dbGraph) Relations(a int) []int {
 			ids = append(ids, rel.Start.Id())
 		}
 	}
-	fmt.Println("gr:Rel:", a, ids)
+	//fmt.Println("gr:Rel:", a, ids)
 	return ids
 }

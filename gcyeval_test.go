@@ -29,13 +29,16 @@ func TestUniverse(t *testing.T) {
 func TestTagged(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (n:Tag)<-[:TAGGED_BY]-(v) return v")
+	table, err := db.Evaluate("match (n:Tag)<-[:IS_TAGGED]-(v) return v")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if table.Len() != 2 {
+	if table.Len() < 2 {
 		t.Error("Evaluation not implemented")
+	}
+	if table.Len() < 5 {
+		t.Skip("Multiple matches not implemented")
 	}
 }
 

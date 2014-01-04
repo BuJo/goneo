@@ -41,15 +41,13 @@ type State interface {
 	String() string
 }
 
-type StateFunc func(graph, graph2 Graph) State
+type SemFeasFunc func(state State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool
 
-func FindIsomorphism(graph, graph2 Graph, makeInitialState StateFunc) map[int]int {
-
-	state := makeInitialState(graph, graph2)
+func FindIsomorphism(initialState State) map[int]int {
 
 	isoMapping := make(map[int]int, 0)
 
-	if match(state, isoMapping) {
+	if match(initialState, isoMapping) {
 		return isoMapping
 	} else {
 		return make(map[int]int, 0)

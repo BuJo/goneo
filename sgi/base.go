@@ -2,6 +2,7 @@ package sgi
 
 import (
 	"fmt"
+	"reflect"
 )
 
 var NULL_NODE int = -1
@@ -100,16 +101,11 @@ func alreadyInMappings(mappings []map[int]int, mapping map[int]int) bool {
 	fmt.Println("in mapping? ", mappings, mapping)
 
 	for _, m0 := range mappings {
-		if len(m0) == len(mapping) {
-			for m0k, m0v := range m0 {
-				if v, ok := mapping[m0k]; ok && v != m0v || !ok {
-					return false
-				}
-			}
-		} else {
-			return false
+		eq := reflect.DeepEqual(m0, mapping)
+		if eq {
+			return true
 		}
 	}
 
-	return len(mappings) > 0
+	return false
 }

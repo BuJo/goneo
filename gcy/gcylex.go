@@ -35,6 +35,7 @@ const (
 	itemEqual
 	itemStar
 	itemPipe
+	itemDot
 
 	// ..
 	itemRange
@@ -259,6 +260,7 @@ func lexGcy(l *lexer) stateFn {
 			l.emit(itemRange)
 			return lexGcy
 		}
+		l.emit(itemDot)
 		return lexField
 	case r == '<':
 		l.next()

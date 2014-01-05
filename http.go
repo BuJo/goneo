@@ -101,7 +101,7 @@ func nodeHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res.Data = node.GetProperties()
+	res.Data = node.Properties()
 
 	b, err := json.MarshalIndent(res, " ", "  ")
 	if err != nil {

@@ -48,8 +48,9 @@ type (
 	}
 
 	Variable struct {
-		Name  string
-		Alias string
+		Name          string
+		Alias         string
+		Object, Field string
 	}
 )
 
@@ -205,24 +206,39 @@ func (p *parser) parseReturns() []*Variable {
 	rets := make([]*Variable, 0)
 
 	for p.tok.typ == itemIdentifier {
-		varname := p.tok.val
-		alias := varname
+		variable := &Variable{}
+		variable.Name = p.tok.val
+		variable.Object = variable.Name
+
 		p.expectType(itemIdentifier)
+
+		if p.tok.typ == itemDot {
+			p.expectType(itemDot)
+
+			variable.Name += "."
+			variable.Field = p.tok.val
+			variable.Name += variable.Field
+
+			p.expectType(itemField)
+		}
+
+		variable.Alias = variable.Name
 
 		if p.tok.typ == itemAs {
 			p.expectType(itemAs)
 
-			alias = p.tok.val
+			variable.Alias = p.tok.val
 
 			p.expectType(itemIdentifier)
 		}
+		fmt.Println("adding var", variable)
+		rets = append(rets, variable)
 
-		rets = append(rets, &Variable{varname, alias})
-
-		if p.tok.typ != itemComma {
-			break
+		if p.tok.typ == itemComma {
+			p.expectType(itemComma)
+			continue
 		}
-		p.expectType(itemComma)
+		break
 	}
 
 	return rets
@@ -295,11 +311,13 @@ func (p *parser) parseNode() *Node {
 	if p.tok.typ == itemLBrace {
 		p.expectType(itemLBrace)
 
+		node.Props = make(map[string]string)
+
 		for p.tok.typ == itemIdentifier {
 			key := p.tok.val
 			p.expectType(itemIdentifier)
 			p.expectType(itemColon)
-			val := p.tok.val
+			val := p.tok.val[1 : len(p.tok.val)-1]
 			p.expectType(itemString)
 
 			node.Props[key] = val

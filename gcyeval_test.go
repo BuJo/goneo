@@ -79,6 +79,20 @@ func TestTwoReturns(t *testing.T) {
 	}
 }
 
+func TestPropertyRetMatch(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	table, err := db.Evaluate("match (n:Person {actor: \"Joss Whedon\"}) return n.actor as actor")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if table.Len() < 1 {
+		t.Error("Evaluation not implemented")
+		return
+	}
+}
+
 type UniverseGenerator struct {
 	db *DatabaseService
 }
@@ -155,7 +169,7 @@ func (gen *UniverseGenerator) actor(name string) *actorBuilder {
 	b := new(actorBuilder)
 	b.db = gen.db
 
-	b.actor = b.db.NewNode("Actor")
+	b.actor = b.db.NewNode("Actor", "Person")
 	b.actor.SetProperty("actor", name)
 
 	return b

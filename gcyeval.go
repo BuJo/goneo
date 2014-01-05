@@ -21,12 +21,8 @@ type (
 		db *DatabaseService
 	}
 
-	Stringable interface {
-		String() string
-	}
-
 	TabularData struct {
-		line []map[string]Stringable
+		line []map[string]interface{}
 	}
 
 	query   struct{ q *gcy.Query }
@@ -60,7 +56,7 @@ func (t *TabularData) String() string {
 	for _, line := range t.line {
 		for _, header := range headers {
 			if _, ok := line[header]; ok && line[header] != nil {
-				fmt.Fprint(w, line[header].String()+"\t")
+				fmt.Fprintf(w, "%s\t", line[header])
 			}
 		}
 		fmt.Fprintln(w, "")
@@ -82,19 +78,19 @@ func (t *TabularData) Merge(t2 *TabularData) *TabularData {
 		// TODO: product? unsure how to handle...
 		fmt.Println("TODO: cannot handle differently sized tables: ", t.Len(), t2.Len())
 	} else if t.Len() == 0 {
-		merged.line = make([]map[string]Stringable, t2.Len(), t2.Len())
+		merged.line = make([]map[string]interface{}, t2.Len(), t2.Len())
 
 		for i := 0; i < t2.Len(); i += 1 {
-			merged.line[i] = make(map[string]Stringable)
+			merged.line[i] = make(map[string]interface{})
 			for k, v := range t2.line[i] {
 				merged.line[i][k] = v
 			}
 		}
 	} else {
-		merged.line = make([]map[string]Stringable, t2.Len(), t2.Len())
+		merged.line = make([]map[string]interface{}, t2.Len(), t2.Len())
 
 		for i := 0; i < t2.Len(); i += 1 {
-			merged.line[i] = make(map[string]Stringable)
+			merged.line[i] = make(map[string]interface{})
 			for k, v := range t.line[i] {
 				merged.line[i][k] = v
 			}
@@ -189,7 +185,6 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 			if currentNode.RightRel == nil {
 				currentNode = nil
 			} else {
-
 				currentNode = currentNode.RightRel.RightNode
 			}
 		}
@@ -251,13 +246,17 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 	r := rr.r
 	table := &TabularData{}
 
-	table.line = make([]map[string]Stringable, 0)
+	table.line = make([]map[string]interface{}, 0)
 
-	for _, o := range ctx.vars[r.Name] {
+	for _, o := range ctx.vars[r.Object] {
 		if o != nil {
-			line := make(map[string]Stringable)
+			line := make(map[string]interface{})
 
-			line[r.Alias] = o
+			if r.Field != "" {
+				line[r.Alias] = o.Property(r.Field).(string)
+			} else {
+				line[r.Alias] = o
+			}
 
 			table.line = append(table.line, line)
 		}
@@ -297,9 +296,18 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 	// Labels
 	labelsOk := t2.HasLabel(q2.Labels()...)
 
+	// Properties
+	propsOk := true
+	for k, v := range q2.Properties() {
+		if ok := t2.HasProperty(k); !ok || t2.Property(k) != v {
+			propsOk = false
+			break
+		}
+	}
+
 	if fromQueryNode == sgi.NULL_NODE {
 		fmt.Printf("queryNode: %s , targetNode: %s\n", q2, t2)
-		return labelsOk
+		return labelsOk && propsOk
 	}
 
 	q1, _ := subgraph.GetNode(fromQueryNode)
@@ -329,7 +337,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 	//fmt.Printf("rel: (%s~>%s), dir: (%s~>%s) \n", qRel.Type(), tRel.Type(), qDir, tDir)
 	fmt.Println(qRel, tRel)
 
-	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir) && labelsOk
+	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir) && labelsOk && propsOk
 }
 
 type dbGraph struct {

@@ -41,7 +41,7 @@ func (node *Node) SetProperty(name, val string) {
 	}
 	node.properties[name] = val
 }
-func (node *Node) GetProperties() map[string]string {
+func (node *Node) Properties() map[string]string {
 	return node.properties
 }
 

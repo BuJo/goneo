@@ -51,6 +51,34 @@ func TestTagged(t *testing.T) {
 	}
 }
 
+func TestTwoReturns(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	table, err := db.Evaluate("match (n:Tag)<-[r:IS_TAGGED]-(v) return v, n")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if table == nil {
+		t.Error("nil table")
+		return
+	}
+	if table.Len() < 2 {
+		t.Error("Evaluation not implemented")
+		return
+	}
+	if table.Columns() < 2 {
+		t.Error("Columns missing")
+	}
+	if table.Len() < 5 {
+		t.Error("Multiple matches not implemented")
+	}
+	if table.Len() > 12 {
+		fmt.Println(table)
+		t.Error("Too much matches")
+	}
+}
+
 type UniverseGenerator struct {
 	db *DatabaseService
 }

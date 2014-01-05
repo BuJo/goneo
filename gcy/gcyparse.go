@@ -204,19 +204,26 @@ func (p *parser) parseRoot() (r *Root) {
 func (p *parser) parseReturns() []*Variable {
 	rets := make([]*Variable, 0)
 
-	varname := p.tok.val
-	alias := varname
-	p.expectType(itemIdentifier)
-
-	if p.tok.typ == itemAs {
-		p.expectType(itemAs)
-
-		alias = p.tok.val
-
+	for p.tok.typ == itemIdentifier {
+		varname := p.tok.val
+		alias := varname
 		p.expectType(itemIdentifier)
-	}
 
-	rets = append(rets, &Variable{varname, alias})
+		if p.tok.typ == itemAs {
+			p.expectType(itemAs)
+
+			alias = p.tok.val
+
+			p.expectType(itemIdentifier)
+		}
+
+		rets = append(rets, &Variable{varname, alias})
+
+		if p.tok.typ != itemComma {
+			break
+		}
+		p.expectType(itemComma)
+	}
 
 	return rets
 }

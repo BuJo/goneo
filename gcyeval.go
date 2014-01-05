@@ -75,6 +75,37 @@ func (t *TabularData) Len() int {
 func (t *TabularData) Columns() int {
 	return len(t.line[0])
 }
+func (t *TabularData) Merge(t2 *TabularData) *TabularData {
+	merged := new(TabularData)
+
+	if t.Len() > 0 && t.Len() != t2.Len() {
+		// TODO: product? unsure how to handle...
+		fmt.Println("TODO: cannot handle differently sized tables: ", t.Len(), t2.Len())
+	} else if t.Len() == 0 {
+		merged.line = make([]map[string]Stringable, t2.Len(), t2.Len())
+
+		for i := 0; i < t2.Len(); i += 1 {
+			merged.line[i] = make(map[string]Stringable)
+			for k, v := range t2.line[i] {
+				merged.line[i][k] = v
+			}
+		}
+	} else {
+		merged.line = make([]map[string]Stringable, t2.Len(), t2.Len())
+
+		for i := 0; i < t2.Len(); i += 1 {
+			merged.line[i] = make(map[string]Stringable)
+			for k, v := range t.line[i] {
+				merged.line[i][k] = v
+			}
+			for k, v := range t2.line[i] {
+				merged.line[i][k] = v
+			}
+		}
+	}
+	//fmt.Println("merged tables: ", merged)
+	return merged
+}
 
 func (q *query) evaluate(ctx evalContext) *TabularData {
 
@@ -93,7 +124,7 @@ func (q *query) evaluate(ctx evalContext) *TabularData {
 	table := &TabularData{}
 
 	for _, r := range q.q.Returns {
-		table = (&returns{r}).evaluate(ctx)
+		table = table.Merge((&returns{r}).evaluate(ctx))
 	}
 
 	return table

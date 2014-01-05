@@ -49,7 +49,7 @@ func (db *DatabaseService) createRelation(a, b *Node) *Relation {
 }
 
 func (db *DatabaseService) GetNode(id int) (*Node, error) {
-	if db.nodes == nil || len(db.nodes) < id+1 {
+	if db.nodes == nil || len(db.nodes) < id+1 || id < 0 {
 		return nil, errors.New(fmt.Sprintf("Node %d not found", id))
 	}
 	return db.nodes[id], nil

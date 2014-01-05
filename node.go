@@ -23,7 +23,13 @@ func (node *Node) String() string {
 	if len(props) == 3 {
 		props = ""
 	}
-	return fmt.Sprintf("(%d%s)", node.id, props)
+
+	labels := ""
+	for _, l := range node.labels {
+		labels += ":" + l
+	}
+
+	return fmt.Sprintf("(%d%s%s)", node.id, labels, props)
 }
 
 func (node *Node) Property(prop string) interface{} {
@@ -56,6 +62,10 @@ func (node *Node) HasLabel(labels ...string) bool {
 	}
 
 	return true
+}
+
+func (node *Node) Labels() []string {
+	return node.labels
 }
 
 func (node *Node) RelateTo(end *Node, relType string) *Relation {

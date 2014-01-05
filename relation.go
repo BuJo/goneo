@@ -20,7 +20,7 @@ const (
 )
 
 func (rel *Relation) String() string {
-	return fmt.Sprintf("(%d)-[:%s]->(%d)", rel.Start.id, rel.typ, rel.End.id)
+	return fmt.Sprintf("%s-[:%s]->%s", rel.Start, rel.typ, rel.End)
 }
 
 func (rel *Relation) Property(prop string) interface{} {

@@ -40,8 +40,7 @@ const (
 	itemRange
 
 	// Relationship directions
-	itemLRelDir
-	itemRRelDir
+	itemRelDir
 
 	// Arithmetic
 	itemMinus
@@ -118,7 +117,7 @@ type stateFn func(*lexer) stateFn
 // run executes the lexer
 func (l *lexer) run() {
 	for state := lexGcy; state != nil; {
-		////fmt.Printf("state change\n")
+		//fmt.Printf("state change\n")
 		state = state(l)
 	}
 	close(l.items) // no more tokens
@@ -263,14 +262,14 @@ func lexGcy(l *lexer) stateFn {
 		return lexField
 	case r == '<':
 		l.next()
-		l.emit(itemLRelDir)
+		l.emit(itemRelDir)
 	case r == '-':
 		p := l.peek()
 		if r == '-' && (p == '[' || p == '(' || p == '-' || p == '>') {
 			if p == '>' {
 				l.next()
 			}
-			l.emit(itemRRelDir)
+			l.emit(itemRelDir)
 			return lexGcy
 		}
 		fallthrough

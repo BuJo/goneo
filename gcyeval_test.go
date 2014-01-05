@@ -1,6 +1,7 @@
 package goneo
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -34,11 +35,19 @@ func TestTagged(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	if table == nil {
+		t.Error("nil table")
+		return
+	}
 	if table.Len() < 2 {
 		t.Error("Evaluation not implemented")
 	}
 	if table.Len() < 5 {
-		t.Skip("Multiple matches not implemented")
+		t.Error("Multiple matches not implemented")
+	}
+	if table.Len() > 12 {
+		fmt.Println(table)
+		t.Error("Too much matches")
 	}
 }
 

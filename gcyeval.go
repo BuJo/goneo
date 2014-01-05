@@ -35,7 +35,7 @@ type (
 	returns struct{ r *gcy.Variable }
 )
 
-func (t TabularData) String() string {
+func (t *TabularData) String() string {
 	if len(t.line) == 0 {
 		return ""
 	}
@@ -59,7 +59,9 @@ func (t TabularData) String() string {
 
 	for _, line := range t.line {
 		for _, header := range headers {
-			fmt.Fprint(w, line[header].String()+"\t")
+			if _, ok := line[header]; ok && line[header] != nil {
+				fmt.Fprint(w, line[header].String()+"\t")
+			}
 		}
 		fmt.Fprintln(w, "")
 	}
@@ -67,8 +69,11 @@ func (t TabularData) String() string {
 
 	return b.String()
 }
-func (t TabularData) Len() int {
+func (t *TabularData) Len() int {
 	return len(t.line)
+}
+func (t *TabularData) Columns() int {
+	return len(t.line[0])
 }
 
 func (q *query) evaluate(ctx evalContext) *TabularData {
@@ -137,7 +142,12 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				// TODO: utter crap, path is specific, has no "optional variants"
 				// TODO: utter crap, db relations have no "optional variants"
 				for _, typ := range currentNode.LeftRel.Types {
-					rel := prevNode.RelateTo(n, typ)
+					var rel *Relation
+					if currentNode.LeftRel.Direction == "->" {
+						rel = prevNode.RelateTo(n, typ)
+					} else {
+						rel = n.RelateTo(prevNode, typ)
+					}
 					//fmt.Println("____ created new subgraph rel: ", rel, currentNode.LeftRel)
 
 					builder = builder.Append(rel)
@@ -156,15 +166,17 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 
 	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db}, isSemanticallyFeasable)
 
-	for q, t := range mappings {
-		name := ctx.subgraphRevNameMap[q]
-		node, _ := ctx.db.GetNode(t)
+	for _, mapping := range mappings {
+		for q, t := range mapping {
+			name := ctx.subgraphRevNameMap[q]
+			node, _ := ctx.db.GetNode(t)
 
-		if _, ok := ctx.vars[name]; !ok {
-			ctx.vars[name] = make([]PropertyContainer, 1)
+			if _, ok := ctx.vars[name]; !ok {
+				ctx.vars[name] = make([]PropertyContainer, 1)
+			}
+
+			ctx.vars[name] = append(ctx.vars[name], node)
 		}
-
-		ctx.vars[name] = append(ctx.vars[name], node)
 	}
 
 	return nil
@@ -211,11 +223,13 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 	table.line = make([]map[string]Stringable, 0)
 
 	for _, o := range ctx.vars[r.Name] {
-		line := make(map[string]Stringable)
+		if o != nil {
+			line := make(map[string]Stringable)
 
-		line[r.Alias] = o
+			line[r.Alias] = o
 
-		table.line = append(table.line, line)
+			table.line = append(table.line, line)
+		}
 	}
 
 	fmt.Println("evaluating return, ", table.line)
@@ -246,10 +260,19 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 	graph := state.GetGraph().(*dbGraph).db
 	subgraph := state.GetSubgraph().(*dbGraph).db
 
-	q1, _ := subgraph.GetNode(fromQueryNode)
 	q2, _ := subgraph.GetNode(toQueryNode)
-	t1, _ := graph.GetNode(fromTargetNode)
 	t2, _ := graph.GetNode(toTargetNode)
+
+	// Labels
+	labelsOk := t2.HasLabel(q2.Labels()...)
+
+	if fromQueryNode == sgi.NULL_NODE {
+		fmt.Printf("queryNode: %s , targetNode: %s\n", q2, t2)
+		return labelsOk
+	}
+
+	q1, _ := subgraph.GetNode(fromQueryNode)
+	t1, _ := graph.GetNode(fromTargetNode)
 
 	// query relation
 	qRel, qDir := &Relation{}, Both
@@ -271,11 +294,11 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 		}
 	}
 
-	fmt.Printf("queryNodes: %s,%s , targetNodes: %s,%s | ", q1, q2, t1, t2)
+	fmt.Printf("queryNodes: %s%s%s , targetNodes: %s%s%s | ", q1, qDir, q2, t1, tDir, t2)
 	//fmt.Printf("rel: (%s~>%s), dir: (%s~>%s) \n", qRel.Type(), tRel.Type(), qDir, tDir)
 	fmt.Println(qRel, tRel)
 
-	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir)
+	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir) && labelsOk
 }
 
 type dbGraph struct {
@@ -289,8 +312,8 @@ func (g *dbGraph) Order() int {
 func (g *dbGraph) Contains(a, b int) bool {
 	//fmt.Println("gr:Contains:",a,b)
 	node, _ := g.db.GetNode(a)
-	for _, rel := range node.Relations(Outgoing) {
-		if rel.End.Id() == b {
+	for _, rel := range node.Relations(Both) {
+		if rel.End.Id() == b || rel.Start.Id() == b {
 			return true
 		}
 	}

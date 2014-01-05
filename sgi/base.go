@@ -43,54 +43,73 @@ type State interface {
 
 type SemFeasFunc func(state State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool
 
-func FindIsomorphism(initialState State) map[int]int {
+func FindIsomorphism(initialState State) []map[int]int {
 
-	isoMapping := make(map[int]int, 0)
+	isoMappings := make([]map[int]int, 0, 0)
 
-	if match(initialState, isoMapping) {
-		return isoMapping
-	} else {
-		return make(map[int]int, 0)
-	}
+	match(initialState, &isoMappings)
+
+	return isoMappings
+
 }
 
-func match(state State, isoMapping map[int]int) bool {
+func match(state State, isoMappings *[]map[int]int) {
 	fmt.Println("Start Match")
 
-	if state.IsDead() {
-		fmt.Println("Match is dead")
-		return false
-	}
-
 	if state.IsGoal() {
-		fmt.Println("Match Goal reached")
+		fmt.Println("Match Goal reached, len:", len(*isoMappings))
+		isoMapping := make(map[int]int)
+
 		for k, v := range state.GetMapping() {
 			isoMapping[k] = v
 		}
 
-		return true
+		if !alreadyInMappings(*isoMappings, isoMapping) {
+			fmt.Println("not in mapping")
+			*isoMappings = append(*isoMappings, isoMapping)
+		} else {
+			fmt.Println("in mapping")
+		}
+
+		return
+	}
+
+	if state.IsDead() {
+		fmt.Println("Match is dead")
+		return
 	}
 
 	n1, n2 := state.NextPair()
-	found := false
 
-	fmt.Println("Match starting pair: ", n1, n2)
-	fmt.Println("State:", state)
-
-	for ; !found && n1 != NULL_NODE; n1, n2 = state.NextPair() {
+	for ; n1 != NULL_NODE; n1, n2 = state.NextPair() {
+		fmt.Println("State:", state, " next pair: ", n1, n2)
 
 		if state.IsFeasablePair(n1, n2) {
 			fmt.Println("are feasable: ", n1, n2)
 
 			next := state.NextState(n1, n2)
 
-			found = match(next, isoMapping)
+			match(next, isoMappings)
 
 			next.BackTrack()
 		}
 	}
+}
 
-	fmt.Println("End Match, found? ", found)
+func alreadyInMappings(mappings []map[int]int, mapping map[int]int) bool {
+	fmt.Println("in mapping? ", mappings, mapping)
 
-	return found
+	for _, m0 := range mappings {
+		if len(m0) == len(mapping) {
+			for m0k, m0v := range m0 {
+				if v, ok := mapping[m0k]; ok && v != m0v || !ok {
+					return false
+				}
+			}
+		} else {
+			return false
+		}
+	}
+
+	return len(mappings) > 0
 }

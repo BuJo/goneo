@@ -57,10 +57,10 @@ func (path *simplePath) Items() []PropertyContainer {
 }
 
 func (path *simplePath) String() (str string) {
-	str = fmt.Sprintf("(%d)", path.start.id)
+	str = fmt.Sprintf("%s", path.start)
 
 	for _, rel := range path.relations {
-		str = fmt.Sprintf("%s-[:%s]->(%d)", str, rel.typ, rel.End.id)
+		str = fmt.Sprintf("%s-[:%s]->%s", str, rel.typ, rel.End)
 	}
 
 	return

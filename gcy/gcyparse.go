@@ -257,7 +257,7 @@ func (p *parser) parsePath() *Node {
 
 	currentNode := node
 
-	for p.tok.typ == itemLRelDir {
+	for p.tok.typ == itemRelDir {
 		rel := p.parseRelation()
 		rel.LeftNode = currentNode
 		rel.RightNode = p.parseNode()
@@ -314,7 +314,7 @@ func (p *parser) parseRelation() *Relation {
 	rel := new(Relation)
 
 	rel.Direction = p.tok.val
-	p.expectType(itemLRelDir)
+	p.expectType(itemRelDir)
 
 	if p.tok.typ == itemLBracket {
 		p.expectType(itemLBracket)
@@ -351,7 +351,7 @@ func (p *parser) parseRelation() *Relation {
 	} else if rel.Direction == "-" {
 		rel.Direction = p.tok.val
 	}
-	p.expectType(itemRRelDir)
+	p.expectType(itemRelDir)
 
 	return rel
 }

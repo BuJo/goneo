@@ -79,10 +79,15 @@ func (state *vf2State) IsFeasablePair(queryNode, targetNode int) bool {
 
 	fSem := true
 
-	if fSyn && len(state.queryPath) > 0 {
-		fmt.Printf("(%d,%d)~>(%d,%d) is syntactically feasable, sem: ", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+	if fSyn {
+		if len(state.queryPath) > 0 {
+			fmt.Printf("(%d,%d)~>(%d,%d) are syntactically feasable, sem: ", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
 
-		fSem = state.isSemanticallyFeasable(state, state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+			fSem = state.isSemanticallyFeasable(state, state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+		} else {
+			fmt.Printf("(%d,%d) is syntactically feasable, sem: ", queryNode, targetNode)
+			fSem = state.isSemanticallyFeasable(state, NULL_NODE, NULL_NODE, queryNode, targetNode)
+		}
 	}
 
 	return fSyn && fSem
@@ -92,10 +97,12 @@ func (state *vf2State) isSyntacticallyFeasable(queryNode, targetNode int) bool {
 
 	// Already mapped
 	if _, ok := state.mapping[queryNode]; ok {
+		fmt.Println("query node already mapped")
 		return false
 	}
 	for _, t := range state.mapping {
 		if t == targetNode {
+			fmt.Println("target node already mapped")
 			return false
 		}
 	}
@@ -105,6 +112,7 @@ func (state *vf2State) isSyntacticallyFeasable(queryNode, targetNode int) bool {
 	queryNeighbours := state.query.Relations(queryNode)
 
 	if len(queryNeighbours) > len(targetNeighbours) {
+		fmt.Println("less neighbours than queried")
 		return false
 	}
 
@@ -120,6 +128,7 @@ func (state *vf2State) isSyntacticallyFeasable(queryNode, targetNode int) bool {
 		// match edges in query to target
 		if state.query.Contains(q, queryNode) {
 			if !state.target.Contains(state.targetPath[i], targetNode) {
+				fmt.Printf("edges are incompatible: (%d--%d) ~> (%d--%d)\n", q, queryNode, state.targetPath[i], targetNode)
 				return false
 			}
 		}
@@ -239,7 +248,7 @@ func newVF2State(query, target Graph, fsem SemFeasFunc) State {
 	return state
 }
 
-func FindVF2SubgraphIsomorphism(query, target Graph, fsem SemFeasFunc) map[int]int {
+func FindVF2SubgraphIsomorphism(query, target Graph, fsem SemFeasFunc) []map[int]int {
 	state := newVF2State(query, target, fsem)
 
 	return FindIsomorphism(state)

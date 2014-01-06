@@ -104,7 +104,7 @@ func (builder *PathBuilder) Append(rel *Relation) *PathBuilder {
 	b.start, b.end = builder.start, builder.end
 	b.relations = append(builder.relations, rel)
 
-	if rel.End == b.start {
+	if rel.End == b.end {
 		b.end = rel.Start
 	} else {
 		b.end = rel.End

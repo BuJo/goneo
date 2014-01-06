@@ -28,7 +28,7 @@ type (
 	query   struct{ q *gcy.Query }
 	match   struct{ m *gcy.Match }
 	root    struct{ r *gcy.Root }
-	returns struct{ r *gcy.Variable }
+	returns struct{ r *gcy.Returnable }
 )
 
 func (t *TabularData) String() string {
@@ -70,6 +70,9 @@ func (t *TabularData) Len() int {
 }
 func (t *TabularData) Columns() int {
 	return len(t.line[0])
+}
+func (t *TabularData) Get(row int, column string) interface{} {
+	return t.line[row][column]
 }
 func (t *TabularData) Merge(t2 *TabularData) *TabularData {
 	merged := new(TabularData)
@@ -269,23 +272,53 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 
 	table.line = make([]map[string]interface{}, 0)
 
-	for _, o := range ctx.vars[r.Object] {
-		if o != nil {
-			line := make(map[string]interface{})
+	for _, o := range evaluateReturnable(ctx, r) {
+		line := make(map[string]interface{})
 
+		switch o.(type) {
+		case *Node:
 			if r.Field != "" {
-				line[r.Alias] = o.Property(r.Field).(string)
+				line[r.Alias] = o.(*Node).Property(r.Field)
 			} else {
 				line[r.Alias] = o
 			}
-
-			table.line = append(table.line, line)
+		default:
+			line[r.Alias] = o
 		}
+		table.line = append(table.line, line)
+
 	}
 
 	fmt.Println("evaluating return, ", table.line)
 
 	return table
+}
+
+func evaluateReturnable(ctx evalContext, r *gcy.Returnable) []interface{} {
+	objs := make([]interface{}, 0)
+
+	switch r.Type {
+	case "variable":
+		for _, o := range ctx.vars[r.Object] {
+			if o != nil {
+				objs = append(objs, o)
+			}
+		}
+	case "function":
+		subobjs := make([][]interface{}, 0)
+		for _, item := range r.Vars {
+			subobjs = append(subobjs, evaluateReturnable(ctx, item))
+		}
+		switch r.Object {
+		case "count":
+			if len(subobjs) != 1 {
+				fmt.Println("ERROR evaluating variable ", r.Name, ", need 1 variable")
+			}
+			objs = append(objs, len(subobjs[0]))
+		}
+	}
+
+	return objs
 }
 
 //Evaluate a gcy query

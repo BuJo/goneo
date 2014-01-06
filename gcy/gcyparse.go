@@ -10,9 +10,9 @@ type (
 	Query struct {
 		Roots   []*Root
 		Match   *Match
-		Returns []*Variable
-		Deletes []*Variable
-		Creates []*Variable
+		Returns []*Returnable
+		Deletes []*Returnable
+		Creates []*Returnable
 	}
 
 	Root struct {
@@ -47,10 +47,13 @@ type (
 		LeftNode, RightNode *Node
 	}
 
-	Variable struct {
+	Returnable struct {
+		Type string
+
 		Name          string
 		Alias         string
 		Object, Field string
+		Vars          []*Returnable
 	}
 )
 
@@ -203,37 +206,31 @@ func (p *parser) parseRoot() (r *Root) {
 
 	return r
 }
-func (p *parser) parseReturns() []*Variable {
-	rets := make([]*Variable, 0)
+func (p *parser) parseReturns() []*Returnable {
+	rets := make([]*Returnable, 0)
 
 	for p.tok.typ == itemIdentifier {
-		variable := &Variable{}
-		variable.Name = p.tok.val
-		variable.Object = variable.Name
-
+		var ret *Returnable
+		name := p.tok.val
 		p.expectType(itemIdentifier)
 
-		if p.tok.typ == itemDot {
-			p.expectType(itemDot)
-
-			variable.Name += "."
-			variable.Field = p.tok.val
-			variable.Name += variable.Field
-
-			p.expectType(itemField)
+		if p.tok.typ == itemLParen {
+			ret = p.parseFunction(name)
+		} else {
+			ret = p.parseVariable(name)
 		}
 
-		variable.Alias = variable.Name
+		ret.Alias = ret.Name
 
 		if p.tok.typ == itemAs {
 			p.expectType(itemAs)
 
-			variable.Alias = p.tok.val
+			ret.Alias = p.tok.val
 
 			p.expectType(itemIdentifier)
 		}
-		fmt.Println("adding var", variable)
-		rets = append(rets, variable)
+		fmt.Println("adding var", ret)
+		rets = append(rets, ret)
 
 		if p.tok.typ == itemComma {
 			p.expectType(itemComma)
@@ -244,12 +241,62 @@ func (p *parser) parseReturns() []*Variable {
 
 	return rets
 }
+func (p *parser) parseVariable(name string) *Returnable {
+	variable := &Returnable{Type: "variable", Name: name, Object: name}
 
-func (p *parser) parseDelete() []*Variable {
+	if p.tok.typ == itemDot {
+		p.expectType(itemDot)
+
+		variable.Name += "."
+		variable.Field = p.tok.val
+		variable.Name += variable.Field
+
+		p.expectType(itemField)
+	}
+
+	return variable
+}
+func (p *parser) parseFunction(name string) *Returnable {
+	function := &Returnable{Type: "function", Name: name, Object: name}
+	p.expectType(itemLParen)
+	function.Name += "("
+
+	function.Vars = make([]*Returnable, 0)
+
+	for p.tok.typ == itemIdentifier {
+		var ret *Returnable
+		name := p.tok.val
+		p.expectType(itemIdentifier)
+
+		if p.tok.typ == itemLParen {
+			ret = p.parseFunction(name)
+		} else {
+			ret = p.parseVariable(name)
+		}
+
+		function.Name += ret.Name
+
+		function.Vars = append(function.Vars, ret)
+
+		if p.tok.typ == itemComma {
+			p.expectType(itemComma)
+			function.Name += ", "
+			continue
+		}
+		break
+	}
+
+	function.Name += ")"
+	p.expectType(itemRParen)
+
+	return function
+}
+
+func (p *parser) parseDelete() []*Returnable {
 	return nil
 }
 
-func (p *parser) parseCreate() []*Variable {
+func (p *parser) parseCreate() []*Returnable {
 	return nil
 }
 

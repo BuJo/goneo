@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
-import "goneo"
+import (
+	"fmt"
+	"goneo"
+	"goneo/web"
+)
 
 func main() {
 
@@ -9,7 +12,7 @@ func main() {
 
 	nodeA := db.NewNode()
 	nodeA.SetProperty("foo", "bar")
-	
+
 	nodeB := db.NewNode()
 
 	fmt.Println("nodes: ", nodeA, nodeB)
@@ -26,5 +29,5 @@ func main() {
 
 	nodeB.RelateTo(nodeC, "BELONGS_TO")
 
-	goneo.NewGoneoServer(db).Bind(":7474").Start()
+	web.NewGoneoServer(db).Bind(":7474").Start()
 }

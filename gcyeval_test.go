@@ -7,15 +7,10 @@ import (
 
 func TestBasicStartQuery(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
+	count := len(db.GetAllNodes())
 
 	table, err := db.Evaluate("start n=node(*) return n as node")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table.Len() < 1 {
-		t.Error(table)
-	}
+	NewTableTester(t, table, err).HasColumns("node").HasLen(count)
 }
 func TestUniverse(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
@@ -31,66 +26,21 @@ func TestTagged(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
 	table, err := db.Evaluate("match (n:Tag)<-[:IS_TAGGED]-(v) return v")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table == nil {
-		t.Error("nil table")
-		return
-	}
-	if table.Len() < 2 {
-		t.Error("Evaluation not implemented")
-	}
-	if table.Len() < 5 {
-		t.Error("Multiple matches not implemented")
-	}
-	if table.Len() > 12 {
-		fmt.Println(table)
-		t.Error("Too much matches")
-	}
+	NewTableTester(t, table, err).HasLen(6).HasColumns("v")
 }
 
 func TestTwoReturns(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
 	table, err := db.Evaluate("match (n:Tag)<-[r:IS_TAGGED]-(v) return v, n")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table == nil {
-		t.Error("nil table")
-		return
-	}
-	if table.Len() < 2 {
-		t.Error("Evaluation not implemented")
-		return
-	}
-	if table.Columns() < 2 {
-		t.Error("Columns missing")
-	}
-	if table.Len() < 5 {
-		t.Error("Multiple matches not implemented")
-	}
-	if table.Len() > 12 {
-		fmt.Println(table)
-		t.Error("Too much matches")
-	}
+	NewTableTester(t, table, err).HasLen(6).HasColumns("v", "n")
 }
 
 func TestPropertyRetMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
 	table, err := db.Evaluate("match (n:Person {actor: \"Joss Whedon\"}) return n.actor as actor")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table.Len() < 1 {
-		t.Error("Evaluation not implemented")
-		return
-	}
+	NewTableTester(t, table, err).Has("actor", "Joss Whedon")
 }
 
 func TestStartMatch(t *testing.T) {
@@ -100,14 +50,7 @@ func TestStartMatch(t *testing.T) {
 	fmt.Println(creator, creator.Relations(Both))
 
 	table, err := db.Evaluate("start joss=node(0) match (joss)-->(o) return o.series")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table.Len() < 1 {
-		t.Error("Evaluation not implemented")
-		return
-	}
+	NewTableTester(t, table, err).Has("o.series", "Firefly")
 }
 
 func TestLongPathMatch(t *testing.T) {
@@ -127,15 +70,8 @@ func TestLongPathMatch(t *testing.T) {
 func TestMultiMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (e1)-[:ARCS_TO]->(e2), (e1)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2) return e1, e2")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if table.Len() < 1 {
-		t.Skip("Evaluation not implemented")
-		return
-	}
+	table, err := db.Evaluate("match (e1)-[:ARCS_TO]->(e2), (e1)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2) return e1.episode, e2.episode")
+	NewTableTester(t, table, err).Has("e1.episode", "2")
 }
 
 func TestPathVariable(t *testing.T) {
@@ -150,6 +86,84 @@ func TestPathVariable(t *testing.T) {
 		t.Skip("Saving paths not implemented")
 		return
 	}
+}
+
+func TestFunctionCount(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	table, err := db.Evaluate("match (e:Episode)-[:ARCS_TO]->(e2) return count(e) as nrArcs")
+	NewTableTester(t, table, err).Has("nrArcs", 1)
+}
+
+type TableTester struct {
+	t          *testing.T
+	table      *TabularData
+	currentRow int
+	err        error
+}
+
+func NewTableTester(t *testing.T, table *TabularData, err error) *TableTester {
+	tester := new(TableTester)
+	tester.t = t
+	tester.table = table
+	tester.currentRow = -1
+	tester.err = err
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	return tester
+}
+func (t *TableTester) Has(column string, expected interface{}) *TableTester {
+	t.currentRow += 1
+
+	if t.err != nil {
+		return t
+	}
+
+	if t.table.Len() < t.currentRow+1 {
+		t.t.Error("Table not big enough, want: ", t.currentRow+1)
+		return t
+	}
+
+	if actual := t.table.Get(t.currentRow, column); actual != expected {
+		t.t.Error("Bad cell, expected ", expected, " got ", actual)
+	}
+
+	return t
+}
+func (t *TableTester) HasLen(l int) *TableTester {
+	if t.err != nil {
+		return t
+	}
+
+	if t.table.Len() != l {
+		t.t.Error("Bad table length, expected ", l, " got ", t.table.Len())
+	}
+	return t
+}
+func (t *TableTester) HasColumns(cols ...string) *TableTester {
+	if t.err != nil {
+		return t
+	}
+
+	if len(t.table.Columns()) != len(cols) {
+		t.t.Error("Bad number of columns, expected ", len(cols), " got ", len(t.table.Columns()), ": ", t.table.Columns())
+	}
+
+	for _, expectedCol := range cols {
+		found := false
+		for _, actualCol := range t.table.Columns() {
+			if expectedCol == actualCol {
+				found = true
+			}
+		}
+		if !found {
+			t.t.Error("Bad column length, expected ", expectedCol, " in ", t.table.Columns())
+		}
+	}
+	return t
 }
 
 type UniverseGenerator struct {

@@ -68,8 +68,12 @@ func (t *TabularData) String() string {
 func (t *TabularData) Len() int {
 	return len(t.line)
 }
-func (t *TabularData) Columns() int {
-	return len(t.line[0])
+func (t *TabularData) Columns() []string {
+	cols := make([]string, 0)
+	for k, _ := range t.line[0] {
+		cols = append(cols, k)
+	}
+	return cols
 }
 func (t *TabularData) Get(row int, column string) interface{} {
 	return t.line[row][column]

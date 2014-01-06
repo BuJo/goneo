@@ -118,7 +118,7 @@ type stateFn func(*lexer) stateFn
 // run executes the lexer
 func (l *lexer) run() {
 	for state := lexGcy; state != nil; {
-		//fmt.Printf("state change\n")
+		//log.Print("state change")
 		state = state(l)
 	}
 	close(l.items) // no more tokens
@@ -128,7 +128,7 @@ func (l *lexer) run() {
 func (l *lexer) emit(t itemType) {
 	l.items <- item{t, l.input[l.start:l.pos]}
 
-	//fmt.Printf("emitted item from %d to %d: %s\n", l.start, l.pos, item{t, l.input[l.start:l.pos]})
+	//log.Printf("emitted item from %d to %d: %s\n", l.start, l.pos, item{t, l.input[l.start:l.pos]})
 
 	l.start = l.pos
 }
@@ -164,7 +164,7 @@ func (l *lexer) backup() {
 }
 
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	//fmt.Printf("error at: %d(%s)\n", l.pos, l.input[l.pos:])
+	//log.Printf("error at: %d(%s)\n", l.pos, l.input[l.pos:])
 	l.items <- item{itemError, fmt.Sprintf(format, args)}
 	return nil
 }
@@ -228,12 +228,12 @@ const (
 
 func lexGcy(l *lexer) stateFn {
 	if l.pos >= len(l.input) {
-		//fmt.Println("end lexing Gcy")
+		//log.Print("end lexing Gcy")
 		l.emit(itemEOF)
 		return nil
 	}
 
-	//fmt.Printf("peek: %c\n", l.peek())
+	//log.Printf("peek: %c\n", l.peek())
 
 	switch r := l.next(); {
 	case r == eof || isEndOfLine(r):
@@ -321,7 +321,7 @@ func lexGcy(l *lexer) stateFn {
 }
 
 func lexIdentifier(l *lexer) stateFn {
-	//fmt.Println("lexing ident: ", l.input[l.start:l.pos])
+	//log.Print("lexing ident: ", l.input[l.start:l.pos])
 
 Loop:
 	for {

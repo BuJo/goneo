@@ -1,7 +1,7 @@
 package sgi
 
 import (
-	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -55,10 +55,10 @@ func FindIsomorphism(initialState State) []map[int]int {
 }
 
 func match(state State, isoMappings *[]map[int]int) {
-	fmt.Println("Start Match")
+	log.Print("Start Match")
 
 	if state.IsGoal() {
-		fmt.Println("Match Goal reached, len:", len(*isoMappings))
+		log.Print("Match Goal reached, len:", len(*isoMappings))
 		isoMapping := make(map[int]int)
 
 		for k, v := range state.GetMapping() {
@@ -66,27 +66,27 @@ func match(state State, isoMappings *[]map[int]int) {
 		}
 
 		if !alreadyInMappings(*isoMappings, isoMapping) {
-			fmt.Println("not in mapping")
+			log.Print("not in mapping")
 			*isoMappings = append(*isoMappings, isoMapping)
 		} else {
-			fmt.Println("in mapping")
+			log.Print("in mapping")
 		}
 
 		return
 	}
 
 	if state.IsDead() {
-		fmt.Println("Match is dead")
+		log.Print("Match is dead")
 		return
 	}
 
 	n1, n2 := state.NextPair()
 
 	for ; n1 != NULL_NODE; n1, n2 = state.NextPair() {
-		fmt.Println("State:", state, " next pair: ", n1, n2)
+		log.Print("State:", state, " next pair: ", n1, n2)
 
 		if state.IsFeasablePair(n1, n2) {
-			fmt.Println("are feasable: ", n1, n2)
+			log.Print("are feasable: ", n1, n2)
 
 			next := state.NextState(n1, n2)
 
@@ -98,7 +98,7 @@ func match(state State, isoMappings *[]map[int]int) {
 }
 
 func alreadyInMappings(mappings []map[int]int, mapping map[int]int) bool {
-	fmt.Println("in mapping? ", mappings, mapping)
+	log.Print("in mapping? ", mappings, mapping)
 
 	for _, m0 := range mappings {
 		eq := reflect.DeepEqual(m0, mapping)

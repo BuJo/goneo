@@ -3,6 +3,7 @@ package gcy
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -48,12 +49,13 @@ type (
 	}
 
 	Returnable struct {
-		Type string
+		Type string // int, string, function, variable
 
 		Name          string
 		Alias         string
 		Object, Field string
 		Vars          []*Returnable
+		Value         interface{}
 	}
 )
 
@@ -110,19 +112,19 @@ func (p *parser) expectType(tok itemType) {
 }
 
 func (p *parser) parseStart() []*Root {
-	fmt.Println("parsing search query")
+	log.Print("parsing search query")
 
 	var roots []*Root
 
 	roots = p.parseRoots()
 
-	fmt.Println("returning from search query: ", roots)
+	log.Print("returning from search query: ", roots)
 
 	return roots
 }
 
 func (p *parser) parseRoots() []*Root {
-	fmt.Println("parsing search query roots")
+	log.Print("parsing search query roots")
 
 	roots := make([]*Root, 0)
 	roots = append(roots, p.parseRoot())
@@ -180,7 +182,7 @@ func (p *parser) parseRoot() (r *Root) {
 					p.expectType(itemNumber)
 
 				}
-				fmt.Println("parsing item number in root: ", start, end)
+				log.Print("parsing item number in root: ", start, end)
 				for i := start; i <= end; i += 1 {
 					r.IdVars = append(r.IdVars, i)
 				}
@@ -229,7 +231,7 @@ func (p *parser) parseReturns() []*Returnable {
 
 			p.expectType(itemIdentifier)
 		}
-		fmt.Println("adding var", ret)
+		log.Print("adding var", ret)
 		rets = append(rets, ret)
 
 		if p.tok.typ == itemComma {
@@ -319,7 +321,7 @@ func (p *parser) parseMatch() *Match {
 
 		match.Paths = append(match.Paths, path)
 
-		fmt.Println("added path to paths: ", match.Paths)
+		log.Print("added path to paths: ", match.Paths)
 
 		if p.tok.typ == itemComma {
 			p.expectType(itemComma)

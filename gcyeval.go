@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"goneo/gcy"
 	"goneo/sgi"
+	"log"
 	"text/tabwriter"
 )
 
@@ -83,7 +84,7 @@ func (t *TabularData) Merge(t2 *TabularData) *TabularData {
 
 	if t.Len() > 0 && t.Len() != t2.Len() {
 		// TODO: product? unsure how to handle...
-		fmt.Println("TODO: cannot handle differently sized tables: ", t.Len(), t2.Len())
+		log.Fatal("TODO: cannot handle differently sized tables: ", t.Len(), t2.Len())
 	} else if t.Len() == 0 {
 		merged.line = make([]map[string]interface{}, t2.Len(), t2.Len())
 
@@ -106,7 +107,7 @@ func (t *TabularData) Merge(t2 *TabularData) *TabularData {
 			}
 		}
 	}
-	//fmt.Println("merged tables: ", merged)
+	//log.Print("merged tables: ", merged)
 	return merged
 }
 
@@ -149,7 +150,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 			if currentNode.Name != "" {
 				if id, ok := ctx.subgraphNameMap[currentNode.Name]; ok {
 					n, _ = subgraph.GetNode(id)
-					fmt.Println("tried to find node name ", currentNode.Name, ", found", n)
+					log.Print("tried to find node name ", currentNode.Name, ", found", n)
 				}
 			}
 
@@ -158,7 +159,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				ctx.subgraphNameMap[currentNode.Name] = n.Id()
 				ctx.subgraphRevNameMap[n.Id()] = currentNode.Name
 
-				fmt.Println("created new node: ", n, "(", currentNode, ")")
+				log.Print("created new node: ", n, "(", currentNode, ")")
 
 				for k, v := range currentNode.Props {
 					n.SetProperty(k, v)
@@ -166,11 +167,11 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 			}
 
 			if builder == nil {
-				fmt.Println("first run, node: ", n, "(", currentNode, ")")
+				log.Print("first run, node: ", n, "(", currentNode, ")")
 				builder = NewPathBuilder(n)
 			} else {
 				prevNode := builder.Last()
-				fmt.Println("next run, ", prevNode, "->", n, "(", currentNode, ")")
+				log.Print("next run, ", prevNode, "->", n, "(", currentNode, ")")
 
 				// TODO: utter crap, path is specific, has no "optional variants"
 				// TODO: utter crap, db relations have no "optional variants"
@@ -184,7 +185,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				} else {
 					rel = n.RelateTo(prevNode, typ)
 				}
-				//fmt.Println("created new subgraph rel: ", rel, currentNode.LeftRel)
+				//log.Print("created new subgraph rel: ", rel, currentNode.LeftRel)
 
 				builder = builder.Append(rel)
 			}
@@ -205,14 +206,14 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 	}
 
 	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db}, func(state sgi.State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool {
-		//fmt.Println("tyring to find mapping for subgraph id ", toQueryNode, " in ", ctx.subgraphRevNameMap)
+		//log.Print("tyring to find mapping for subgraph id ", toQueryNode, " in ", ctx.subgraphRevNameMap)
 		if name, hasName := ctx.subgraphRevNameMap[toQueryNode]; hasName {
 
 			if t2, hasMapping := knownMappings[name]; hasMapping {
-				//fmt.Println(name, " mapped in ", ctx.vars, "targetId should be ", t2, " is ", toTargetNode)
+				//log.Print(name, " mapped in ", ctx.vars, "targetId should be ", t2, " is ", toTargetNode)
 				return t2 == toTargetNode
 			}
-			//fmt.Println(name, " not mapped in ", knownMappings, ", trying normal mapping")
+			//log.Print(name, " not mapped in ", knownMappings, ", trying normal mapping")
 		}
 
 		return isSemanticallyFeasable(state, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode)
@@ -266,7 +267,7 @@ func (rr *root) evaluate(ctx evalContext) *TabularData {
 		}
 	}
 
-	fmt.Println("handled root: ", r, ", vars: ", ctx.vars)
+	log.Print("handled root: ", r, ", vars: ", ctx.vars)
 
 	return &TabularData{}
 }
@@ -293,7 +294,7 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 
 	}
 
-	fmt.Println("evaluating return, ", table.line)
+	log.Print("evaluating return, ", table.line)
 
 	return table
 }
@@ -316,7 +317,7 @@ func evaluateReturnable(ctx evalContext, r *gcy.Returnable) []interface{} {
 		switch r.Object {
 		case "count":
 			if len(subobjs) != 1 {
-				fmt.Println("ERROR evaluating variable ", r.Name, ", need 1 variable")
+				log.Fatal("ERROR evaluating variable ", r.Name, ", need 1 variable")
 			}
 			objs = append(objs, len(subobjs[0]))
 		}
@@ -364,7 +365,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 	}
 
 	if fromQueryNode == sgi.NULL_NODE {
-		fmt.Printf("queryNode: %s , targetNode: %s\n", q2, t2)
+		log.Printf("queryNode: %s , targetNode: %s\n", q2, t2)
 		return labelsOk && propsOk
 	}
 
@@ -391,9 +392,9 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 		}
 	}
 
-	fmt.Printf("queryNodes: %s%s%s , targetNodes: %s%s%s | ", q1, qDir, q2, t1, tDir, t2)
-	//fmt.Printf("rel: (%s~>%s), dir: (%s~>%s) \n", qRel.Type(), tRel.Type(), qDir, tDir)
-	fmt.Println(qRel, tRel)
+	log.Printf("queryNodes: %s%s%s , targetNodes: %s%s%s | ", q1, qDir, q2, t1, tDir, t2)
+	//log.Printf("rel: (%s~>%s), dir: (%s~>%s) \n", qRel.Type(), tRel.Type(), qDir, tDir)
+	log.Print(qRel, tRel)
 
 	return (qRel.Type() == "" || qRel.Type() == tRel.Type()) && (qDir == Both || qDir == tDir) && labelsOk && propsOk
 }
@@ -407,7 +408,7 @@ func (g *dbGraph) Order() int {
 }
 
 func (g *dbGraph) Contains(a, b int) bool {
-	//fmt.Println("gr:Contains:",a,b)
+	//log.Print("gr:Contains:",a,b)
 	node, _ := g.db.GetNode(a)
 	for _, rel := range node.Relations(Both) {
 		if rel.End.Id() == b || rel.Start.Id() == b {
@@ -423,7 +424,7 @@ func (g *dbGraph) Successors(a int) []int {
 	for _, rel := range node.Relations(Outgoing) {
 		ids = append(ids, rel.End.Id())
 	}
-	//fmt.Println("gr:succ:",a,ids)
+	//log.Print("gr:succ:",a,ids)
 	return ids
 }
 func (g *dbGraph) Predecessors(a int) []int {
@@ -433,7 +434,7 @@ func (g *dbGraph) Predecessors(a int) []int {
 	for _, rel := range node.Relations(Incoming) {
 		ids = append(ids, rel.Start.Id())
 	}
-	//fmt.Println("gr:Pred:",a,ids)
+	//log.Print("gr:Pred:",a,ids)
 	return ids
 }
 func (g *dbGraph) Relations(a int) []int {
@@ -447,6 +448,6 @@ func (g *dbGraph) Relations(a int) []int {
 			ids = append(ids, rel.Start.Id())
 		}
 	}
-	//fmt.Println("gr:Rel:", a, ids)
+	//log.Print("gr:Rel:", a, ids)
 	return ids
 }

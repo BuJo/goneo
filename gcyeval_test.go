@@ -138,6 +138,20 @@ func TestMultiMatch(t *testing.T) {
 	}
 }
 
+func TestPathVariable(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	table, err := db.Evaluate("start joss=node(0) match path = (joss)-->(o) return path")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if table.Len() < 1 {
+		t.Skip("Saving paths not implemented")
+		return
+	}
+}
+
 type UniverseGenerator struct {
 	db *DatabaseService
 

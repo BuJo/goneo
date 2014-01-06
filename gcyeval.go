@@ -126,7 +126,7 @@ func (q *query) evaluate(ctx evalContext) *TabularData {
 	return table
 }
 
-// BUG(jo): db cannot ancode undirected graph
+// BUG(jo): db cannot encode undirected graph
 // BUG(jo): cannot encode more than one possible relation type
 
 func (mm *match) evaluate(ctx evalContext) *TabularData {
@@ -140,7 +140,6 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 			var n *Node
 
 			if currentNode.Name != "" {
-
 				if id, ok := ctx.subgraphNameMap[currentNode.Name]; ok {
 					n, _ = subgraph.GetNode(id)
 					fmt.Println("tried to find node name ", currentNode.Name, ", found", n)
@@ -168,18 +167,20 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 
 				// TODO: utter crap, path is specific, has no "optional variants"
 				// TODO: utter crap, db relations have no "optional variants"
-				for _, typ := range currentNode.LeftRel.Types {
-					var rel *Relation
-					if currentNode.LeftRel.Direction == "->" {
-						rel = prevNode.RelateTo(n, typ)
-					} else {
-						rel = n.RelateTo(prevNode, typ)
-					}
-					//fmt.Println("____ created new subgraph rel: ", rel, currentNode.LeftRel)
-
-					builder = builder.Append(rel)
-					break
+				typ := ""
+				if ok := len(currentNode.LeftRel.Types) > 0; ok {
+					typ = currentNode.LeftRel.Types[0]
 				}
+				var rel *Relation
+				if currentNode.LeftRel.Direction == "->" {
+					rel = prevNode.RelateTo(n, typ)
+				} else {
+					rel = n.RelateTo(prevNode, typ)
+				}
+				//fmt.Println("____ created new subgraph rel: ", rel, currentNode.LeftRel)
+
+				builder = builder.Append(rel)
+
 			}
 
 			if currentNode.RightRel == nil {
@@ -190,7 +191,26 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 		}
 	}
 
-	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db}, isSemanticallyFeasable)
+	knownMappings := map[string]int{}
+	for k, v := range ctx.vars {
+		for _, n := range v {
+			knownMappings[k] = n.Id()
+		}
+	}
+
+	mappings := sgi.FindVF2SubgraphIsomorphism(&dbGraph{subgraph}, &dbGraph{ctx.db}, func(state sgi.State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool {
+		//fmt.Println("tyring to find mapping for subgraph id ", toQueryNode, " in ", ctx.subgraphRevNameMap)
+		if name, hasName := ctx.subgraphRevNameMap[toQueryNode]; hasName {
+
+			if t2, hasMapping := knownMappings[name]; hasMapping {
+				//fmt.Println(name, " mapped in ", ctx.vars, "targetId should be ", t2, " is ", toTargetNode)
+				return t2 == toTargetNode
+			}
+			//fmt.Println(name, " not mapped in ", knownMappings, ", trying normal mapping")
+		}
+
+		return isSemanticallyFeasable(state, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode)
+	})
 
 	for _, mapping := range mappings {
 		for q, t := range mapping {
@@ -239,6 +259,8 @@ func (rr *root) evaluate(ctx evalContext) *TabularData {
 			}
 		}
 	}
+
+	fmt.Println("handled root: ", r, ", vars: ", ctx.vars)
 
 	return &TabularData{}
 }

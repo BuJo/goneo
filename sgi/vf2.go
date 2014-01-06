@@ -220,7 +220,7 @@ func (state *vf2State) loadCandidates(queryNode, targetNode int) {
 		}
 	}
 
-	fmt.Println("loaded new candidates: ", state.candidates)
+	fmt.Println("loaded new candidates: ", state.candidates, " from ", targetNeighbours, queryNeighbours)
 }
 
 func newVF2State(query, target Graph, fsem SemFeasFunc) State {

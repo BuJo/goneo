@@ -93,6 +93,23 @@ func TestPropertyRetMatch(t *testing.T) {
 	}
 }
 
+func TestStartMatch(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	creator, _ := db.GetNode(0)
+	fmt.Println(creator, creator.Relations(Both))
+
+	table, err := db.Evaluate("start joss=node(0) match (joss)-->(o) return o.series")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if table.Len() < 1 {
+		t.Error("Evaluation not implemented")
+		return
+	}
+}
+
 type UniverseGenerator struct {
 	db *DatabaseService
 }

@@ -131,13 +131,13 @@ func (p *parser) parseRoot() (r *Root) {
 	p.expectType(itemIdentifier)
 	p.expectType(itemEqual)
 
-	r = &Root{Name: varname}
+	r = &Root{Name: varname, IdVars: make([]int, 0)}
 
 	switch p.tok.val {
 	case "node", "relation":
 		typ := p.tok.val
 		p.expect(typ)
-		p.expect("(")
+		p.expectType(itemLParen)
 
 		r.Typ = typ
 
@@ -177,7 +177,8 @@ func (p *parser) parseRoot() (r *Root) {
 					p.expectType(itemNumber)
 
 				}
-				for i := start; i < end; i += 1 {
+				fmt.Println("parsing item number in root: ", start, end)
+				for i := start; i <= end; i += 1 {
 					r.IdVars = append(r.IdVars, i)
 				}
 			case itemStar:

@@ -4,6 +4,7 @@ import "fmt"
 
 type PropertyContainer interface {
 	Property(string) interface{}
+	Id() int
 	String() string
 }
 
@@ -58,9 +59,32 @@ func (path *simplePath) Items() []PropertyContainer {
 
 func (path *simplePath) String() (str string) {
 	str = fmt.Sprintf("%s", path.start)
+	left := path.start
 
 	for _, rel := range path.relations {
-		str = fmt.Sprintf("%s-[:%s]->%s", str, rel.typ, rel.End)
+		relstr := ""
+		if rel.typ != "" {
+			relstr = fmt.Sprintf("[:%s]", rel.typ)
+		}
+
+		direction := Both
+		if rel.Start == left {
+			direction = Outgoing
+			left = rel.End
+		} else {
+			direction = Incoming
+			left = rel.Start
+		}
+
+		switch direction {
+		case Both:
+			relstr = "-" + relstr + "-"
+		case Incoming:
+			relstr = "<-" + relstr + "-"
+		case Outgoing:
+			relstr = "-" + relstr + "->"
+		}
+		str = fmt.Sprintf("%s%s%s", str, relstr, left)
 	}
 
 	return

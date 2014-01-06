@@ -20,7 +20,11 @@ const (
 )
 
 func (rel *Relation) String() string {
-	return fmt.Sprintf("%s-[:%s]->%s", rel.Start, rel.typ, rel.End)
+	relstr := ""
+	if rel.typ != "" {
+		relstr = fmt.Sprintf("[:%s]", rel.typ)
+	}
+	return fmt.Sprintf("%s-%s->%s", rel.Start, relstr, rel.End)
 }
 
 func (rel *Relation) Property(prop string) interface{} {
@@ -52,4 +56,8 @@ func (d Direction) String() string {
 
 func (rel *Relation) Type() string {
 	return rel.typ
+}
+
+func (rel *Relation) Id() int {
+	return rel.id
 }

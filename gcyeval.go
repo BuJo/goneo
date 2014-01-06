@@ -177,10 +177,9 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				} else {
 					rel = n.RelateTo(prevNode, typ)
 				}
-				//fmt.Println("____ created new subgraph rel: ", rel, currentNode.LeftRel)
+				//fmt.Println("created new subgraph rel: ", rel, currentNode.LeftRel)
 
 				builder = builder.Append(rel)
-
 			}
 
 			if currentNode.RightRel == nil {

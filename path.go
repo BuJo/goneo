@@ -91,8 +91,8 @@ func (path *simplePath) String() (str string) {
 }
 
 type PathBuilder struct {
-	start     *Node
-	relations []*Relation
+	start, end *Node
+	relations  []*Relation
 }
 
 func (builder *PathBuilder) Build() Path {
@@ -101,21 +101,24 @@ func (builder *PathBuilder) Build() Path {
 
 func (builder *PathBuilder) Append(rel *Relation) *PathBuilder {
 	b := new(PathBuilder)
-	b.start = builder.start
+	b.start, b.end = builder.start, builder.end
 	b.relations = append(builder.relations, rel)
 
+	if rel.End == b.start {
+		b.end = rel.Start
+	} else {
+		b.end = rel.End
+	}
+	//fmt.Println("end of path ", b.Build(), " is now: ", b.end, " added rel ", rel)
 	return b
 }
 func (builder *PathBuilder) Last() *Node {
-	if builder.relations == nil || len(builder.relations) == 0 {
-		return builder.start
-	}
-	return builder.relations[len(builder.relations)-1].End
+	return builder.end
 }
 
 func NewPathBuilder(start *Node) *PathBuilder {
 	builder := new(PathBuilder)
-	builder.start = start
+	builder.start, builder.end = start, start
 	builder.relations = make([]*Relation, 0)
 
 	return builder

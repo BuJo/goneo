@@ -256,23 +256,30 @@ func (p *parser) parseCreate() []*Variable {
 func (p *parser) parseMatch() *Match {
 	match := new(Match)
 
-	path := new(Path)
+	for {
+		path := new(Path)
 
-	if p.tok.typ == itemLParen {
-		path.Start = p.parsePath()
-	} else {
-		path.Name = p.tok.val
-		p.expectType(itemIdentifier)
+		if p.tok.typ == itemLParen {
+			path.Start = p.parsePath()
+		} else {
+			path.Name = p.tok.val
+			p.expectType(itemIdentifier)
 
-		p.expectType(itemEqual)
+			p.expectType(itemEqual)
 
-		path.Start = p.parsePath()
+			path.Start = p.parsePath()
+		}
+
+		match.Paths = append(match.Paths, path)
+
+		fmt.Println("added path to paths: ", match.Paths)
+
+		if p.tok.typ == itemComma {
+			p.expectType(itemComma)
+			continue
+		}
+		break
 	}
-
-	match.Paths = append(match.Paths, path)
-
-	fmt.Println("added path to paths: ", match.Paths)
-
 	return match
 }
 

@@ -40,7 +40,6 @@ func DirectionFromString(str string) Direction {
 	return Both
 }
 
-
 func (d Direction) String() string {
 	switch d {
 	case Both:

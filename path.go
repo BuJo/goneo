@@ -10,7 +10,7 @@ type PropertyContainer interface {
 
 type Path interface {
 	Nodes() []*Node
-	Relations() []*Relation
+	Relations() []Relation
 	Items() []PropertyContainer
 
 	String() string
@@ -18,7 +18,7 @@ type Path interface {
 
 type simplePath struct {
 	start     *Node
-	relations []*Relation
+	relations []Relation
 }
 
 func (path *simplePath) Nodes() (nodes []*Node) {
@@ -31,13 +31,13 @@ func (path *simplePath) Nodes() (nodes []*Node) {
 	}
 
 	for _, rel := range path.relations {
-		nodes = append(nodes, rel.End)
+		nodes = append(nodes, rel.End())
 	}
 
 	return
 }
 
-func (path *simplePath) Relations() []*Relation {
+func (path *simplePath) Relations() []Relation {
 	return path.relations
 }
 
@@ -51,7 +51,7 @@ func (path *simplePath) Items() []PropertyContainer {
 
 	for _, rel := range path.relations {
 		items = append(items, rel)
-		items = append(items, rel.End)
+		items = append(items, rel.End())
 	}
 
 	return items
@@ -63,17 +63,17 @@ func (path *simplePath) String() (str string) {
 
 	for _, rel := range path.relations {
 		relstr := ""
-		if rel.typ != "" {
-			relstr = fmt.Sprintf("[:%s]", rel.typ)
+		if rel.Type() != "" {
+			relstr = fmt.Sprintf("[:%s]", rel.Type())
 		}
 
 		direction := Both
-		if rel.Start == left {
+		if rel.Start() == left {
 			direction = Outgoing
-			left = rel.End
+			left = rel.End()
 		} else {
 			direction = Incoming
-			left = rel.Start
+			left = rel.Start()
 		}
 
 		switch direction {
@@ -92,22 +92,22 @@ func (path *simplePath) String() (str string) {
 
 type PathBuilder struct {
 	start, end *Node
-	relations  []*Relation
+	relations  []Relation
 }
 
 func (builder *PathBuilder) Build() Path {
 	return &simplePath{builder.start, builder.relations}
 }
 
-func (builder *PathBuilder) Append(rel *Relation) *PathBuilder {
+func (builder *PathBuilder) Append(rel Relation) *PathBuilder {
 	b := new(PathBuilder)
 	b.start, b.end = builder.start, builder.end
 	b.relations = append(builder.relations, rel)
 
-	if rel.End == b.end {
-		b.end = rel.Start
+	if rel.End() == b.end {
+		b.end = rel.Start()
 	} else {
-		b.end = rel.End
+		b.end = rel.End()
 	}
 	//fmt.Println("end of path ", b.Build(), " is now: ", b.end, " added rel ", rel)
 	return b
@@ -119,7 +119,7 @@ func (builder *PathBuilder) Last() *Node {
 func NewPathBuilder(start *Node) *PathBuilder {
 	builder := new(PathBuilder)
 	builder.start, builder.end = start, start
-	builder.relations = make([]*Relation, 0)
+	builder.relations = make([]Relation, 0)
 
 	return builder
 }

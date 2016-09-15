@@ -8,14 +8,14 @@ import (
 
 type DatabaseService struct {
 	nodes         []*Node
-	relationships []*Relation
+	relationships []Relation
 }
 
 func NewTemporaryDb() *DatabaseService {
 	db := new(DatabaseService)
 
 	db.nodes = make([]*Node, 0)
-	db.relationships = make([]*Relation, 0)
+	db.relationships = make([]Relation, 0)
 
 	return db
 }
@@ -37,13 +37,13 @@ func (db *DatabaseService) NewNode(labels ...string) *Node {
 	return n
 }
 
-func (db *DatabaseService) createRelation(a, b *Node) *Relation {
-	r := new(Relation)
-	r.Start = a
-	r.End = b
+func (db *DatabaseService) createRelation(a, b *Node) Relation {
+	r := new(relation)
+	r.setStart(a)
+	r.setEnd(b)
 
 	db.relationships = append(db.relationships, r)
-	r.id = len(db.relationships) - 1
+	r.setId(len(db.relationships) - 1)
 
 	return r
 }
@@ -59,14 +59,14 @@ func (db *DatabaseService) GetAllNodes() []*Node {
 	return db.nodes
 }
 
-func (db *DatabaseService) GetRelation(id int) (*Relation, error) {
+func (db *DatabaseService) GetRelation(id int) (Relation, error) {
 	if db.nodes == nil || len(db.relationships) < id+1 {
 		return nil, errors.New("Relationship not found")
 	}
 	return db.relationships[id], nil
 }
 
-func (db *DatabaseService) GetAllRelations() []*Relation {
+func (db *DatabaseService) GetAllRelations() []Relation {
 	return db.relationships
 }
 

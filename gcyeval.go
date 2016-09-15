@@ -179,7 +179,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 				if ok := len(currentNode.LeftRel.Types) > 0; ok {
 					typ = currentNode.LeftRel.Types[0]
 				}
-				var rel *Relation
+				var rel Relation
 				if currentNode.LeftRel.Direction == "->" {
 					rel = prevNode.RelateTo(n, typ)
 				} else {
@@ -373,21 +373,23 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 	t1, _ := graph.GetNode(fromTargetNode)
 
 	// query relation
-	qRel, qDir := &Relation{}, Both
+	var qRel Relation
+	var qDir Direction = Both
 	for _, rel := range q1.Relations(Both) {
-		if rel.Start.Id() == q1.Id() && rel.End.Id() == q2.Id() {
+		if rel.Start().Id() == q1.Id() && rel.End().Id() == q2.Id() {
 			qRel, qDir = rel, Outgoing
-		} else if rel.End.Id() == q1.Id() && rel.Start.Id() == q2.Id() {
+		} else if rel.End().Id() == q1.Id() && rel.Start().Id() == q2.Id() {
 			qRel, qDir = rel, Incoming
 		}
 	}
 
 	// target relation
-	tRel, tDir := &Relation{}, Both
+	var tRel Relation
+	var tDir Direction = Both
 	for _, rel := range t1.Relations(Both) {
-		if rel.Start.Id() == t1.Id() && rel.End.Id() == t2.Id() {
+		if rel.Start().Id() == t1.Id() && rel.End().Id() == t2.Id() {
 			tRel, tDir = rel, Outgoing
-		} else if rel.End.Id() == t1.Id() && rel.Start.Id() == t2.Id() {
+		} else if rel.End().Id() == t1.Id() && rel.Start().Id() == t2.Id() {
 			tRel, tDir = rel, Incoming
 		}
 	}
@@ -411,7 +413,7 @@ func (g *dbGraph) Contains(a, b int) bool {
 	//log.Print("gr:Contains:",a,b)
 	node, _ := g.db.GetNode(a)
 	for _, rel := range node.Relations(Both) {
-		if rel.End.Id() == b || rel.Start.Id() == b {
+		if rel.End().Id() == b || rel.Start().Id() == b {
 			return true
 		}
 	}
@@ -422,7 +424,7 @@ func (g *dbGraph) Successors(a int) []int {
 	node, _ := g.db.GetNode(a)
 	ids := make([]int, 0)
 	for _, rel := range node.Relations(Outgoing) {
-		ids = append(ids, rel.End.Id())
+		ids = append(ids, rel.End().Id())
 	}
 	//log.Print("gr:succ:",a,ids)
 	return ids
@@ -432,7 +434,7 @@ func (g *dbGraph) Predecessors(a int) []int {
 	node, _ := g.db.GetNode(a)
 	ids := make([]int, 0)
 	for _, rel := range node.Relations(Incoming) {
-		ids = append(ids, rel.Start.Id())
+		ids = append(ids, rel.Start().Id())
 	}
 	//log.Print("gr:Pred:",a,ids)
 	return ids
@@ -442,10 +444,10 @@ func (g *dbGraph) Relations(a int) []int {
 	node, _ := g.db.GetNode(a)
 	ids := make([]int, 0)
 	for _, rel := range node.Relations(Both) {
-		if rel.Start.Id() == a {
-			ids = append(ids, rel.End.Id())
+		if rel.Start().Id() == a {
+			ids = append(ids, rel.End().Id())
 		} else {
-			ids = append(ids, rel.Start.Id())
+			ids = append(ids, rel.Start().Id())
 		}
 	}
 	//log.Print("gr:Rel:", a, ids)

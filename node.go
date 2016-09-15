@@ -10,7 +10,7 @@ type Node struct {
 	id int
 
 	labels     []string
-	relations  []*Relation
+	relations  []Relation
 	properties map[string]string
 }
 
@@ -68,16 +68,16 @@ func (node *Node) Labels() []string {
 	return node.labels
 }
 
-func (node *Node) RelateTo(end *Node, relType string) *Relation {
+func (node *Node) RelateTo(end *Node, relType string) Relation {
 
 	for _, rel := range node.Relations(Outgoing) {
-		if rel.End.id == end.id && rel.typ == relType {
+		if rel.End().Id() == end.id && rel.Type() == relType {
 			return rel
 		}
 	}
 
 	rel := node.db.createRelation(node, end)
-	rel.typ = relType
+	rel.setType(relType)
 
 	node.relations = append(node.relations, rel)
 	end.relations = append(end.relations, rel)
@@ -85,15 +85,15 @@ func (node *Node) RelateTo(end *Node, relType string) *Relation {
 	return rel
 }
 
-func (node *Node) Relations(dir Direction) []*Relation {
+func (node *Node) Relations(dir Direction) []Relation {
 	if dir == Both {
 		return node.relations
 	}
 
-	rels := make([]*Relation, 0)
+	rels := make([]Relation, 0)
 
 	for _, rel := range node.relations {
-		if dir == Incoming && rel.End.id == node.id || dir == Outgoing && rel.Start.id == node.id {
+		if dir == Incoming && rel.End().Id() == node.id || dir == Outgoing && rel.Start().Id() == node.id {
 			rels = append(rels, rel)
 		}
 	}

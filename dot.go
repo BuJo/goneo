@@ -18,7 +18,7 @@ func (db *DatabaseService) DumpDot() string {
 	str += "\n\n"
 
 	for _, r := range db.GetAllRelations() {
-		str += fmt.Sprintf("\tn%d -> n%d [label=\"%s\"]\n", r.Start.Id(), r.End.Id(), r.Type())
+		str += fmt.Sprintf("\tn%d -> n%d [label=\"%s\"]\n", r.Start().Id(), r.End().Id(), r.Type())
 	}
 
 	str += "}\n"

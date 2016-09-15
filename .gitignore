@@ -1,0 +1,4 @@
+.tmp/
+Godeps/*
+sgi/mx/*
+doc/*.pdf

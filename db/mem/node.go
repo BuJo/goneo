@@ -1,25 +1,13 @@
-package goneo
+package mem
 
 import (
 	"fmt"
+	. "goneo/db"
 	"sort"
 )
 
-type Node interface {
-	Id() int
-	String() string
-	Property(prop string) interface{}
-	Properties() map[string]string
-	SetProperty(name, val string)
-	HasProperty(prop string) bool
-	HasLabel(labels ...string) bool
-	Labels() []string
-	RelateTo(end Node, relType string) Relation
-	Relations(dir Direction) []Relation
-}
-
 type node struct {
-	db *DatabaseService
+	db *databaseService
 	id int
 
 	labels     []string
@@ -95,7 +83,7 @@ func (n *node) RelateTo(endI Node, relType string) Relation {
 	}
 
 	rel := n.db.createRelation(n, end)
-	rel.setType(relType)
+	rel.typ = relType
 
 	n.relations = append(n.relations, rel)
 	end.relations = append(end.relations, rel)

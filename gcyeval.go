@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	. "goneo/db"
+	"goneo/db/mem"
 	"goneo/gcy"
 	"goneo/sgi"
 	"log"
@@ -19,7 +21,7 @@ type (
 
 		subgraph *dbGraph
 
-		db *DatabaseService
+		db DatabaseService
 	}
 
 	TabularData struct {
@@ -140,7 +142,7 @@ func (q *query) evaluate(ctx evalContext) *TabularData {
 func (mm *match) evaluate(ctx evalContext) *TabularData {
 	m := mm.m
 
-	subgraph := NewTemporaryDb()
+	subgraph := mem.NewDb()
 
 	for _, p := range m.Paths {
 		var builder *PathBuilder
@@ -331,7 +333,7 @@ func evaluateReturnable(ctx evalContext, r *gcy.Returnable) []interface{} {
 // Example:
 //
 // 	start n=node(*) return n
-func (db *DatabaseService) Evaluate(qry string) (*TabularData, error) {
+func Evaluate(db DatabaseService, qry string) (*TabularData, error) {
 	q, err := gcy.Parse("goneo", qry)
 	if err != nil {
 		return nil, err
@@ -402,7 +404,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 }
 
 type dbGraph struct {
-	db *DatabaseService
+	db DatabaseService
 }
 
 func (g *dbGraph) Order() int {

@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"goneo"
+	goneodb "goneo/db"
+
 	"io"
 	"log"
 	"net/http"
@@ -18,7 +19,7 @@ type (
 
 		router *mux.Router
 
-		db *goneo.DatabaseService
+		db goneodb.DatabaseService
 	}
 
 	ServiceResponse struct {
@@ -118,11 +119,11 @@ func nodeRelHandler(w http.ResponseWriter, req *http.Request) {
 	nodeId, _ := strconv.Atoi(vars["id"])
 	node, _ := currentServer.db.GetNode(nodeId)
 
-	for _, rel := range node.Relations(goneo.DirectionFromString(vars["direction"])) {
+	for _, rel := range node.Relations(goneodb.DirectionFromString(vars["direction"])) {
 		r := RelationshipResponse{}
-		r.Start, _ = getUrl("Node", "id", strconv.Itoa(rel.Start.Id()))
+		r.Start, _ = getUrl("Node", "id", strconv.Itoa(rel.Start().Id()))
 		r.Self, _ = getUrl("Relationship", "id", strconv.Itoa(rel.Id()))
-		r.End, _ = getUrl("Node", "id", strconv.Itoa(rel.End.Id()))
+		r.End, _ = getUrl("Node", "id", strconv.Itoa(rel.End().Id()))
 
 		res = append(res, r)
 	}
@@ -144,7 +145,7 @@ func baseHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(b)
 }
 
-func NewGoneoServer(db *goneo.DatabaseService) *GoneoServer {
+func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 	s := new(GoneoServer)
 
 	s.db = db

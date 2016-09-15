@@ -1,4 +1,4 @@
-package goneo
+package mem
 
 import (
 	"fmt"

@@ -2,6 +2,8 @@ package goneo
 
 import (
 	"fmt"
+	. "goneo/db"
+	"goneo/db/mem"
 	"testing"
 )
 
@@ -9,7 +11,7 @@ func TestBasicStartQuery(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 	count := len(db.GetAllNodes())
 
-	table, err := db.Evaluate("start n=node(*) return n as node")
+	table, err := Evaluate(db, "start n=node(*) return n as node")
 	NewTableTester(t, table, err).HasColumns("node").HasLen(count)
 }
 func TestUniverse(t *testing.T) {
@@ -25,21 +27,21 @@ func TestUniverse(t *testing.T) {
 func TestTagged(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (n:Tag)<-[:IS_TAGGED]-(v) return v")
+	table, err := Evaluate(db, "match (n:Tag)<-[:IS_TAGGED]-(v) return v")
 	NewTableTester(t, table, err).HasLen(6).HasColumns("v")
 }
 
 func TestTwoReturns(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (n:Tag)<-[r:IS_TAGGED]-(v) return v, n")
+	table, err := Evaluate(db, "match (n:Tag)<-[r:IS_TAGGED]-(v) return v, n")
 	NewTableTester(t, table, err).HasLen(6).HasColumns("v", "n")
 }
 
 func TestPropertyRetMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (n:Person {actor: \"Joss Whedon\"}) return n.actor as actor")
+	table, err := Evaluate(db, "match (n:Person {actor: \"Joss Whedon\"}) return n.actor as actor")
 	NewTableTester(t, table, err).Has("actor", "Joss Whedon")
 }
 
@@ -49,14 +51,14 @@ func TestStartMatch(t *testing.T) {
 	creator, _ := db.GetNode(0)
 	fmt.Println(creator, creator.Relations(Both))
 
-	table, err := db.Evaluate("start joss=node(0) match (joss)-->(o) return o.series")
+	table, err := Evaluate(db, "start joss=node(0) match (joss)-->(o) return o.series")
 	NewTableTester(t, table, err).Has("o.series", "Firefly")
 }
 
 func TestLongPathMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (e1:Episode)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2:Episode) return e1, e2")
+	table, err := Evaluate(db, "match (e1:Episode)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2:Episode) return e1, e2")
 	if err != nil {
 		t.Error(err)
 		return
@@ -70,14 +72,14 @@ func TestLongPathMatch(t *testing.T) {
 func TestMultiMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (e1)-[:ARCS_TO]->(e2), (e1)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2) return e1.episode, e2.episode")
+	table, err := Evaluate(db, "match (e1)-[:ARCS_TO]->(e2), (e1)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2) return e1.episode, e2.episode")
 	NewTableTester(t, table, err).Has("e1.episode", "2")
 }
 
 func TestPathVariable(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("start joss=node(0) match path = (joss)-->(o) return path")
+	table, err := Evaluate(db, "start joss=node(0) match path = (joss)-->(o) return path")
 	if err != nil {
 		t.Error(err)
 		return
@@ -91,7 +93,7 @@ func TestPathVariable(t *testing.T) {
 func TestFunctionCount(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	table, err := db.Evaluate("match (e:Episode)-[:ARCS_TO]->(e2) return count(e) as nrArcs")
+	table, err := Evaluate(db, "match (e:Episode)-[:ARCS_TO]->(e2) return count(e) as nrArcs")
 	NewTableTester(t, table, err).Has("nrArcs", 1)
 }
 
@@ -167,7 +169,7 @@ func (t *TableTester) HasColumns(cols ...string) *TableTester {
 }
 
 type UniverseGenerator struct {
-	db *DatabaseService
+	db DatabaseService
 
 	crew     []Node
 	episodes []Node
@@ -177,7 +179,7 @@ type UniverseGenerator struct {
 func NewUniverseGenerator() *UniverseGenerator {
 	gen := new(UniverseGenerator)
 
-	gen.db = NewTemporaryDb()
+	gen.db = mem.NewDb()
 
 	gen.addMeta()
 	gen.addCharacters()
@@ -186,7 +188,7 @@ func NewUniverseGenerator() *UniverseGenerator {
 	return gen
 }
 
-func (gen *UniverseGenerator) Generate() *DatabaseService {
+func (gen *UniverseGenerator) Generate() DatabaseService {
 	return gen.db
 }
 
@@ -266,7 +268,7 @@ func (gen *UniverseGenerator) createEpisode(nr int, title string) Node {
 type actorBuilder struct {
 	actor Node
 
-	db *DatabaseService
+	db DatabaseService
 }
 
 func (gen *UniverseGenerator) actor(name string) *actorBuilder {
@@ -308,7 +310,7 @@ type characterBuilder struct {
 	characters []Node
 	relType    string
 
-	db *DatabaseService
+	db DatabaseService
 }
 
 func (gen *UniverseGenerator) character(char Node) *characterBuilder {

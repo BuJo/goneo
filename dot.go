@@ -2,9 +2,10 @@ package goneo
 
 import (
 	"fmt"
+	. "goneo/db"
 )
 
-func (db *DatabaseService) DumpDot() string {
+func DumpDot(db DatabaseService) string {
 
 	str := "digraph G {\n"
 

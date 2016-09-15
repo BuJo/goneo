@@ -1,18 +1,19 @@
-package goneo
+package mem
 
 import (
 	"errors"
 	"fmt"
+	. "goneo/db"
 	"sort"
 )
 
-type DatabaseService struct {
+type databaseService struct {
 	nodes         []Node
 	relationships []Relation
 }
 
-func NewTemporaryDb() *DatabaseService {
-	db := new(DatabaseService)
+func NewDb() DatabaseService {
+	db := new(databaseService)
 
 	db.nodes = make([]Node, 0)
 	db.relationships = make([]Relation, 0)
@@ -20,7 +21,7 @@ func NewTemporaryDb() *DatabaseService {
 	return db
 }
 
-func (db *DatabaseService) NewNode(labels ...string) Node {
+func (db *databaseService) NewNode(labels ...string) Node {
 	n := new(node)
 	n.db = db
 
@@ -37,40 +38,40 @@ func (db *DatabaseService) NewNode(labels ...string) Node {
 	return n
 }
 
-func (db *DatabaseService) createRelation(a, b Node) Relation {
+func (db *databaseService) createRelation(a, b Node) *relation {
 	r := new(relation)
-	r.setStart(a)
-	r.setEnd(b)
+	r.start = a
+	r.end = b
 
 	db.relationships = append(db.relationships, r)
-	r.setId(len(db.relationships) - 1)
+	r.id = len(db.relationships) - 1
 
 	return r
 }
 
-func (db *DatabaseService) GetNode(id int) (Node, error) {
+func (db *databaseService) GetNode(id int) (Node, error) {
 	if db.nodes == nil || len(db.nodes) < id+1 || id < 0 {
 		return nil, errors.New(fmt.Sprintf("Node %d not found", id))
 	}
 	return db.nodes[id], nil
 }
 
-func (db *DatabaseService) GetAllNodes() []Node {
+func (db *databaseService) GetAllNodes() []Node {
 	return db.nodes
 }
 
-func (db *DatabaseService) GetRelation(id int) (Relation, error) {
+func (db *databaseService) GetRelation(id int) (Relation, error) {
 	if db.nodes == nil || len(db.relationships) < id+1 {
 		return nil, errors.New("Relationship not found")
 	}
 	return db.relationships[id], nil
 }
 
-func (db *DatabaseService) GetAllRelations() []Relation {
+func (db *databaseService) GetAllRelations() []Relation {
 	return db.relationships
 }
 
-func (db *DatabaseService) FindPath(start, end Node) Path {
+func (db *databaseService) FindPath(start, end Node) Path {
 
 	builder := NewPathBuilder(start)
 
@@ -103,7 +104,7 @@ func findPathRec(builder *PathBuilder, end Node) (b *PathBuilder, done bool) {
 	return builder, false
 }
 
-func (db *DatabaseService) FindNodeByProperty(prop, value string) []Node {
+func (db *databaseService) FindNodeByProperty(prop, value string) []Node {
 	found := make([]Node, 0)
 
 	for _, node := range db.nodes {

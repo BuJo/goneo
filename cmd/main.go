@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"goneo"
+	"goneo/db/mem"
 	"goneo/web"
 )
 
 func main() {
 
-	db := goneo.NewTemporaryDb()
+	db := mem.NewDb()
 
 	nodeA := db.NewNode()
 	nodeA.SetProperty("foo", "bar")

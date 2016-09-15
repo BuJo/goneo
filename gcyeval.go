@@ -145,7 +145,7 @@ func (mm *match) evaluate(ctx evalContext) *TabularData {
 	for _, p := range m.Paths {
 		var builder *PathBuilder
 		for currentNode := p.Start; currentNode != nil; {
-			var n *Node
+			var n Node
 
 			if currentNode.Name != "" {
 				if id, ok := ctx.subgraphNameMap[currentNode.Name]; ok {
@@ -281,9 +281,9 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 		line := make(map[string]interface{})
 
 		switch o.(type) {
-		case *Node:
+		case Node:
 			if r.Field != "" {
-				line[r.Alias] = o.(*Node).Property(r.Field)
+				line[r.Alias] = o.(Node).Property(r.Field)
 			} else {
 				line[r.Alias] = o
 			}

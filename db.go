@@ -7,21 +7,21 @@ import (
 )
 
 type DatabaseService struct {
-	nodes         []*Node
+	nodes         []Node
 	relationships []Relation
 }
 
 func NewTemporaryDb() *DatabaseService {
 	db := new(DatabaseService)
 
-	db.nodes = make([]*Node, 0)
+	db.nodes = make([]Node, 0)
 	db.relationships = make([]Relation, 0)
 
 	return db
 }
 
-func (db *DatabaseService) NewNode(labels ...string) *Node {
-	n := new(Node)
+func (db *DatabaseService) NewNode(labels ...string) Node {
+	n := new(node)
 	n.db = db
 
 	db.nodes = append(db.nodes, n)
@@ -37,7 +37,7 @@ func (db *DatabaseService) NewNode(labels ...string) *Node {
 	return n
 }
 
-func (db *DatabaseService) createRelation(a, b *Node) Relation {
+func (db *DatabaseService) createRelation(a, b Node) Relation {
 	r := new(relation)
 	r.setStart(a)
 	r.setEnd(b)
@@ -48,14 +48,14 @@ func (db *DatabaseService) createRelation(a, b *Node) Relation {
 	return r
 }
 
-func (db *DatabaseService) GetNode(id int) (*Node, error) {
+func (db *DatabaseService) GetNode(id int) (Node, error) {
 	if db.nodes == nil || len(db.nodes) < id+1 || id < 0 {
 		return nil, errors.New(fmt.Sprintf("Node %d not found", id))
 	}
 	return db.nodes[id], nil
 }
 
-func (db *DatabaseService) GetAllNodes() []*Node {
+func (db *DatabaseService) GetAllNodes() []Node {
 	return db.nodes
 }
 
@@ -70,7 +70,7 @@ func (db *DatabaseService) GetAllRelations() []Relation {
 	return db.relationships
 }
 
-func (db *DatabaseService) FindPath(start, end *Node) Path {
+func (db *DatabaseService) FindPath(start, end Node) Path {
 
 	builder := NewPathBuilder(start)
 
@@ -85,10 +85,10 @@ func (db *DatabaseService) FindPath(start, end *Node) Path {
 	return nil
 }
 
-func findPathRec(builder *PathBuilder, end *Node) (b *PathBuilder, done bool) {
+func findPathRec(builder *PathBuilder, end Node) (b *PathBuilder, done bool) {
 	start := builder.Last()
 
-	if start.id == end.id {
+	if start.Id() == end.Id() {
 		return builder, true
 	}
 
@@ -103,8 +103,8 @@ func findPathRec(builder *PathBuilder, end *Node) (b *PathBuilder, done bool) {
 	return builder, false
 }
 
-func (db *DatabaseService) FindNodeByProperty(prop, value string) []*Node {
-	found := make([]*Node, 0)
+func (db *DatabaseService) FindNodeByProperty(prop, value string) []Node {
+	found := make([]Node, 0)
 
 	for _, node := range db.nodes {
 		if node.HasProperty(prop) && node.Property(prop) == value {

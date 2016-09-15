@@ -9,7 +9,7 @@ type PropertyContainer interface {
 }
 
 type Path interface {
-	Nodes() []*Node
+	Nodes() []Node
 	Relations() []Relation
 	Items() []PropertyContainer
 
@@ -17,12 +17,12 @@ type Path interface {
 }
 
 type simplePath struct {
-	start     *Node
+	start     Node
 	relations []Relation
 }
 
-func (path *simplePath) Nodes() (nodes []*Node) {
-	nodes = make([]*Node, 0)
+func (path *simplePath) Nodes() (nodes []Node) {
+	nodes = make([]Node, 0)
 
 	nodes = append(nodes, path.start)
 
@@ -91,7 +91,7 @@ func (path *simplePath) String() (str string) {
 }
 
 type PathBuilder struct {
-	start, end *Node
+	start, end Node
 	relations  []Relation
 }
 
@@ -112,11 +112,11 @@ func (builder *PathBuilder) Append(rel Relation) *PathBuilder {
 	//fmt.Println("end of path ", b.Build(), " is now: ", b.end, " added rel ", rel)
 	return b
 }
-func (builder *PathBuilder) Last() *Node {
+func (builder *PathBuilder) Last() Node {
 	return builder.end
 }
 
-func NewPathBuilder(start *Node) *PathBuilder {
+func NewPathBuilder(start Node) *PathBuilder {
 	builder := new(PathBuilder)
 	builder.start, builder.end = start, start
 	builder.relations = make([]Relation, 0)

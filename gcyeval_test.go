@@ -169,9 +169,9 @@ func (t *TableTester) HasColumns(cols ...string) *TableTester {
 type UniverseGenerator struct {
 	db *DatabaseService
 
-	crew     []*Node
-	episodes []*Node
-	enemies  []*Node
+	crew     []Node
+	episodes []Node
+	enemies  []Node
 }
 
 func NewUniverseGenerator() *UniverseGenerator {
@@ -233,8 +233,8 @@ func (gen *UniverseGenerator) addCharacters() {
 	gen.character(river).is("SISTER").of(simon)
 	gen.character(simon).is("BROTHER").of(river)
 
-	gen.crew = []*Node{mal, zoe, wash, inara, jayne, kaylee, simon, river, sheperd}
-	gen.enemies = []*Node{blue1, blue2, niska, operative}
+	gen.crew = []Node{mal, zoe, wash, inara, jayne, kaylee, simon, river, sheperd}
+	gen.enemies = []Node{blue1, blue2, niska, operative}
 
 	gen.characters(gen.enemies...).are("ENEMY").of(gen.crew...)
 
@@ -253,10 +253,10 @@ func (gen *UniverseGenerator) addEpisodes() {
 	ep02.RelateTo(ep13, "ARCS_TO")
 	niska.RelateTo(ep13, "APPEARED_IN")
 
-	gen.episodes = []*Node{ep01, ep02, ep13}
+	gen.episodes = []Node{ep01, ep02, ep13}
 }
 
-func (gen *UniverseGenerator) createEpisode(nr int, title string) *Node {
+func (gen *UniverseGenerator) createEpisode(nr int, title string) Node {
 	ep := gen.db.NewNode("Episode")
 	ep.SetProperty("episode", fmt.Sprintf("%d", nr))
 	ep.SetProperty("title", title)
@@ -264,7 +264,7 @@ func (gen *UniverseGenerator) createEpisode(nr int, title string) *Node {
 }
 
 type actorBuilder struct {
-	actor *Node
+	actor Node
 
 	db *DatabaseService
 }
@@ -284,9 +284,9 @@ func (gen *UniverseGenerator) actor(name string) *actorBuilder {
 	return b
 }
 
-func (b *actorBuilder) played(names ...string) *Node {
+func (b *actorBuilder) played(names ...string) Node {
 
-	var character *Node
+	var character Node
 
 	for _, name := range names {
 		characters := b.db.FindNodeByProperty("character", name)
@@ -305,13 +305,13 @@ func (b *actorBuilder) played(names ...string) *Node {
 }
 
 type characterBuilder struct {
-	characters []*Node
+	characters []Node
 	relType    string
 
 	db *DatabaseService
 }
 
-func (gen *UniverseGenerator) character(char *Node) *characterBuilder {
+func (gen *UniverseGenerator) character(char Node) *characterBuilder {
 	b := new(characterBuilder)
 	b.db = gen.db
 
@@ -319,7 +319,7 @@ func (gen *UniverseGenerator) character(char *Node) *characterBuilder {
 
 	return b
 }
-func (gen *UniverseGenerator) characters(chars ...*Node) *characterBuilder {
+func (gen *UniverseGenerator) characters(chars ...Node) *characterBuilder {
 
 	b := new(characterBuilder)
 	b.db = gen.db
@@ -336,7 +336,7 @@ func (b *characterBuilder) are(reltype string) *characterBuilder {
 	b.relType = reltype
 	return b
 }
-func (b *characterBuilder) of(actors ...*Node) *characterBuilder {
+func (b *characterBuilder) of(actors ...Node) *characterBuilder {
 	for _, actor := range actors {
 		for _, character := range b.characters {
 			character.RelateTo(actor, b.relType)

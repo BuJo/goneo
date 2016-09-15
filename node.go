@@ -5,7 +5,20 @@ import (
 	"sort"
 )
 
-type Node struct {
+type Node interface {
+	Id() int
+	String() string
+	Property(prop string) interface{}
+	Properties() map[string]string
+	SetProperty(name, val string)
+	HasProperty(prop string) bool
+	HasLabel(labels ...string) bool
+	Labels() []string
+	RelateTo(end Node, relType string) Relation
+	Relations(dir Direction) []Relation
+}
+
+type node struct {
 	db *DatabaseService
 	id int
 
@@ -14,7 +27,7 @@ type Node struct {
 	properties map[string]string
 }
 
-func (node *Node) String() string {
+func (node *node) String() string {
 	props := " {"
 	for key, val := range node.properties {
 		props += key + ":\"" + val + "\","
@@ -32,25 +45,25 @@ func (node *Node) String() string {
 	return fmt.Sprintf("(%d%s%s)", node.id, labels, props)
 }
 
-func (node *Node) Property(prop string) interface{} {
+func (node *node) Property(prop string) interface{} {
 	return node.properties[prop]
 }
-func (node *Node) SetProperty(name, val string) {
+func (node *node) SetProperty(name, val string) {
 	if node.properties == nil {
 		node.properties = make(map[string]string)
 	}
 	node.properties[name] = val
 }
-func (node *Node) Properties() map[string]string {
+func (node *node) Properties() map[string]string {
 	return node.properties
 }
 
-func (node *Node) HasProperty(prop string) bool {
+func (node *node) HasProperty(prop string) bool {
 	_, ok := node.properties[prop]
 	return ok
 }
 
-func (node *Node) HasLabel(labels ...string) bool {
+func (node *node) HasLabel(labels ...string) bool {
 	for _, label := range labels {
 		i := sort.SearchStrings([]string(node.labels), label)
 		if i < len(node.labels) && node.labels[i] == label {
@@ -64,28 +77,33 @@ func (node *Node) HasLabel(labels ...string) bool {
 	return true
 }
 
-func (node *Node) Labels() []string {
+func (node *node) Labels() []string {
 	return node.labels
 }
 
-func (node *Node) RelateTo(end *Node, relType string) Relation {
+func (n *node) RelateTo(endI Node, relType string) Relation {
+	end, ok := endI.(*node)
 
-	for _, rel := range node.Relations(Outgoing) {
+	if !ok {
+		panic("Handling Node of a different DB implementation")
+	}
+
+	for _, rel := range n.Relations(Outgoing) {
 		if rel.End().Id() == end.id && rel.Type() == relType {
 			return rel
 		}
 	}
 
-	rel := node.db.createRelation(node, end)
+	rel := n.db.createRelation(n, end)
 	rel.setType(relType)
 
-	node.relations = append(node.relations, rel)
+	n.relations = append(n.relations, rel)
 	end.relations = append(end.relations, rel)
 
 	return rel
 }
 
-func (node *Node) Relations(dir Direction) []Relation {
+func (node *node) Relations(dir Direction) []Relation {
 	if dir == Both {
 		return node.relations
 	}
@@ -101,6 +119,6 @@ func (node *Node) Relations(dir Direction) []Relation {
 	return rels
 }
 
-func (node *Node) Id() int {
+func (node *node) Id() int {
 	return node.id
 }

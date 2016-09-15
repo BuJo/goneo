@@ -4,15 +4,15 @@ import "fmt"
 
 type Relation interface {
 	Id() int
-	Start() *Node
-	End() *Node
+	Start() Node
+	End() Node
 	Type() string
 
 	Property(prop string) interface{}
 	String() string
 
-	setStart(start *Node)
-	setEnd(end *Node)
+	setStart(start Node)
+	setEnd(end Node)
 	setId(id int)
 	setType(typ string)
 }
@@ -22,7 +22,7 @@ type relation struct {
 	id int
 
 	typ        string
-	start, end *Node
+	start, end Node
 	properties map[string]interface{}
 }
 
@@ -48,13 +48,13 @@ func (rel *relation) Property(prop string) interface{} {
 
 func (rel *relation) Type() string { return rel.typ }
 func (rel *relation) Id() int      { return rel.id }
-func (rel *relation) Start() *Node { return rel.start }
-func (rel *relation) End() *Node   { return rel.end }
+func (rel *relation) Start() Node  { return rel.start }
+func (rel *relation) End() Node    { return rel.end }
 
-func (rel *relation) setStart(start *Node) { rel.start = start }
-func (rel *relation) setEnd(end *Node)     { rel.end = end }
-func (rel *relation) setId(id int)         { rel.id = id }
-func (rel *relation) setType(typ string)   { rel.typ = typ }
+func (rel *relation) setStart(start Node) { rel.start = start }
+func (rel *relation) setEnd(end Node)     { rel.end = end }
+func (rel *relation) setId(id int)        { rel.id = id }
+func (rel *relation) setType(typ string)  { rel.typ = typ }
 
 func DirectionFromString(str string) Direction {
 	if str == "out" || str == "outgoing" {

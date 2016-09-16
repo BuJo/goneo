@@ -174,6 +174,23 @@ func testHandler(c *gin.Context) {
 	c.String(http.StatusOK, "<html><head><title>Test gocy</title><script async=\"async\" crossorigin=\"anonymous\" src=\"https://github.com/mdaines/viz.js/releases/download/v1.3.0/viz.js\"></script></head><body></body></html>")
 }
 
+func gocyTableHandler(c *gin.Context) {
+	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+
+	gocy := c.PostForm("gocy")
+	if gocy != "" {
+		table, err := goneo.Evaluate(db, gocy)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"status": err})
+			return
+		}
+
+		c.String(http.StatusOK, table.String())
+	}
+
+	c.String(http.StatusOK, "")
+}
+
 func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 	s := new(GoneoServer)
 
@@ -186,6 +203,7 @@ func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 
 	s.router.GET("/graphviz", graphvizHandler)
 	s.router.POST("/graphviz", graphvizHandler)
+	s.router.POST("/table", gocyTableHandler)
 	s.router.GET("/", testHandler)
 	s.router.GET("/index.html", testHandler)
 

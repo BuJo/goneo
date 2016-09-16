@@ -9,6 +9,12 @@ This software contains:
 * a simple cypher-like language
 * an http server for access
 
+### Hacking
+
+
+[![Build Status](https://travis-ci.org/BuJo/goneo.svg?branch=master)](https://travis-ci.org/BuJo/goneo)
+
+
 ### Literature
 
 * OPTIMIZED BACKTRACKING FOR SUBGRAPH ISOMORPHISM

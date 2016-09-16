@@ -2,6 +2,7 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
+	"goneo"
 	goneodb "goneo/db"
 	"net/http"
 	"strconv"
@@ -117,6 +118,14 @@ func nodeRelHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func graphvizHandler(c *gin.Context) {
+	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+
+	dot := goneo.DumpDot(db)
+
+	c.String(http.StatusOK, dot)
+}
+
 func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 	s := new(GoneoServer)
 
@@ -125,14 +134,18 @@ func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 
 	s.router.Use(func(c *gin.Context) { c.Set("db", db) })
 
-	noderouter := s.router.Group("/db/data/node")
+	datarouter := s.router.Group("/db/data")
+
+	datarouter.GET("/graphviz", graphvizHandler)
+
+	noderouter := datarouter.Group("/node")
 	{
 		noderouter.GET("/", baseNodeHandler)
 		noderouter.POST("/", createNodeHandler)
 		noderouter.GET("/:id", nodeHandler)
 		noderouter.GET("/:id/relationships/:direction", nodeRelHandler)
 	}
-	relrouter := s.router.Group("/db/data/relationship")
+	relrouter := datarouter.Group("/relationship")
 	{
 		relrouter.GET("/:id", relationshipHandler)
 	}

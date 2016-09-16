@@ -3,6 +3,7 @@ package goneo
 import (
 	"fmt"
 	. "goneo/db"
+	"strings"
 	"testing"
 )
 
@@ -94,6 +95,19 @@ func TestFunctionCount(t *testing.T) {
 
 	table, err := Evaluate(db, "match (e:Episode)-[:ARCS_TO]->(e2) return count(e) as nrArcs")
 	NewTableTester(t, table, err).Has("nrArcs", 1)
+}
+
+func TestErrorBehaviour(t *testing.T) {
+	db := NewUniverseGenerator().Generate()
+
+	table, err := Evaluate(db, "match (e:Episode)-[:ARCS_TO]->(e2) return e.title+e2.title")
+	if err == nil || table != nil {
+		t.Fatal("Should break with error")
+	}
+
+	if !strings.Contains(err.Error(), "bad") {
+		t.Fatal("Should contain bad character error")
+	}
 }
 
 type TableTester struct {

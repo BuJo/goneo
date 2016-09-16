@@ -1,0 +1,10 @@
+{
+	"comment": "Graph Database",
+	"ignore": "test",
+	"package": [],
+	"rootPath": "goneo",
+	"heroku": {
+		"install" : [ "./..." ],
+	 	"goVersion": "go1.7"
+	}
+}

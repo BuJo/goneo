@@ -6,6 +6,7 @@ import (
 	. "goneo/db"
 	"goneo/db/mem"
 	"goneo/web"
+	"log"
 	"math/rand"
 )
 
@@ -16,6 +17,8 @@ var (
 
 func main() {
 	flag.Parse()
+
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
 
 	var db DatabaseService
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"goneo/db/mem"
 	"goneo/web"
 )
@@ -14,16 +13,7 @@ func main() {
 	nodeA.SetProperty("foo", "bar")
 
 	nodeB := db.NewNode()
-
-	fmt.Println("nodes: ", nodeA, nodeB)
-
-	relAB := nodeA.RelateTo(nodeB, "BELONGS_TO")
-
-	fmt.Println("relation: ", relAB)
-
-	path := db.FindPath(nodeA, nodeB)
-
-	fmt.Println("path: ", path)
+	nodeA.RelateTo(nodeB, "BELONGS_TO")
 
 	nodeC := db.NewNode()
 

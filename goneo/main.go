@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	. "goneo"
+	. "goneo/db"
 	"goneo/db/mem"
 	"goneo/web"
 	"math/rand"
@@ -15,26 +17,33 @@ var (
 func main() {
 	flag.Parse()
 
-	db := mem.NewDb()
+	var db DatabaseService
 
-	nodeA := db.NewNode()
-	nodeA.SetProperty("foo", "bar")
-
-	nodeB := db.NewNode()
-	nodeA.RelateTo(nodeB, "BELONGS_TO")
-
-	nodeC := db.NewNode()
-
-	nodeB.RelateTo(nodeC, "BELONGS_TO")
-
-	if *size == "big" {
+	if *size == "universe" {
+		db = NewUniverseGenerator().Generate()
+	} else if *size == "big" {
 		maxNodes := 5000
 		rand.Seed(42)
 
+		db = mem.NewDb()
+		db.NewNode()
 		for n := db.NewNode(); n.Id() < maxNodes; n = db.NewNode() {
 			t, _ := db.GetNode(rand.Intn(n.Id()))
 			n.RelateTo(t, "HAS")
 		}
+	} else {
+		db = mem.NewDb()
+
+		nodeA := db.NewNode()
+		nodeA.SetProperty("foo", "bar")
+
+		nodeB := db.NewNode()
+		nodeA.RelateTo(nodeB, "BELONGS_TO")
+
+		nodeC := db.NewNode()
+
+		nodeB.RelateTo(nodeC, "BELONGS_TO")
+
 	}
 
 	web.NewGoneoServer(db).Bind(*binding).Start()

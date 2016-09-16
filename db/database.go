@@ -1,3 +1,4 @@
+// Basic contract package for a database handled by goneo.
 package db
 
 type Node interface {

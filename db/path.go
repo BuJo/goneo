@@ -2,12 +2,15 @@ package db
 
 import "fmt"
 
+// PropertyContainer encapsulates graph nodes and edges so they can be
+// handled interchangeably for output.
 type PropertyContainer interface {
 	Property(string) interface{}
 	Id() int
 	String() string
 }
 
+// Path encapsulates a simple path in a graph
 type Path interface {
 	Nodes() []Node
 	Relations() []Relation
@@ -21,6 +24,7 @@ type simplePath struct {
 	relations []Relation
 }
 
+// Return all nodes from a path
 func (path *simplePath) Nodes() (nodes []Node) {
 	nodes = make([]Node, 0)
 
@@ -37,10 +41,12 @@ func (path *simplePath) Nodes() (nodes []Node) {
 	return
 }
 
+// Return all relations from a path
 func (path *simplePath) Relations() []Relation {
 	return path.relations
 }
 
+// Return all elements from a path
 func (path *simplePath) Items() []PropertyContainer {
 	items := make([]PropertyContainer, 0)
 	items = append(items, path.start)
@@ -90,6 +96,7 @@ func (path *simplePath) String() (str string) {
 	return
 }
 
+// PathBuilder provides a way to build a path.
 type PathBuilder struct {
 	start, end Node
 	relations  []Relation

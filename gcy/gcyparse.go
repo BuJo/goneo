@@ -478,6 +478,9 @@ func (p *parser) parse(filename string, channel chan item) *Query {
 	return query
 }
 
+// Parse a give string using gcy. The filename is only used for reporting.
+// Make sure to check the returned error, this function may return partially
+// parsed elements.
 func Parse(filename string, src string) (*Query, error) {
 	var p parser
 

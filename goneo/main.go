@@ -1,3 +1,16 @@
+// Commandline test application serving an in memory DB via http.
+/*
+Flags:
+
+	-size=[small|big|universe]
+	-bind=:7474
+
+Sizes:
+
+	* small: Three-node cluster
+	* big: randomly generated tree
+	* universe: sci-fi tv series information
+*/
 package main
 
 import (

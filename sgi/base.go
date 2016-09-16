@@ -1,3 +1,4 @@
+// Package implementing graph isomorphism algorithms and helpers.
 package sgi
 
 import (
@@ -42,8 +43,13 @@ type State interface {
 	String() string
 }
 
+// Function to describe if it semantically feasable to traverse from one
+// node to another by looking at the describing query nodes and the actual
+// nodes in the graph.
+// This is called if a raw edge between the two nodes exist.
 type SemFeasFunc func(state State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool
 
+// Find isomorphism using the given state machine.
 func FindIsomorphism(initialState State) []map[int]int {
 
 	isoMappings := make([]map[int]int, 0, 0)

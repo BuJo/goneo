@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func ExampleBasicUsage(t *testing.T) {
+func ExampleNewDb() {
 
 	db := NewDb()
 
@@ -33,6 +33,11 @@ func ExampleBasicUsage(t *testing.T) {
 	path = db.FindPath(nodeA, nodeC)
 
 	fmt.Println("path: ", path)
+	// Output:
+	//nodes:  (0 {foo:"bar",}) (1)
+	//relation:  (0 {foo:"bar",})-[:BELONGS_TO]->(1)
+	//path:  (0 {foo:"bar",})-[:BELONGS_TO]->(1)
+	//path:  (0 {foo:"bar",})-[:BELONGS_TO]->(1)-[:BELONGS_TO]->(2)
 }
 
 func TestDbCreation(t *testing.T) {

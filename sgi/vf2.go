@@ -249,6 +249,9 @@ func newVF2State(query, target Graph, fsem SemFeasFunc) State {
 	return state
 }
 
+// Find a graph within another using the VF2 algorithm. It returns numeric mappings
+// between the query and target graphs. Use the SemFeasFunc to further
+// limit the algorithm to the nodes which really should be related.
 func FindVF2SubgraphIsomorphism(query, target Graph, fsem SemFeasFunc) []map[int]int {
 	state := newVF2State(query, target, fsem)
 

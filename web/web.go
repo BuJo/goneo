@@ -1,3 +1,4 @@
+// Web interface for goneo.
 package web
 
 import (
@@ -9,16 +10,18 @@ import (
 	"strconv"
 )
 
+type GoneoServer interface {
+	Bind(binding string) GoneoServer // default: :7474
+	Start()
+}
+
 type (
-	GoneoServer struct {
+	goneoServer struct {
 		router  *gin.Engine
 		binding string
 	}
 
-	ServiceResponse struct {
-		Node   string
-		Cypher string
-	}
+	// JSON representation of a node
 	NodeResponse struct {
 		Self                   string
 		Property               string
@@ -28,6 +31,7 @@ type (
 		Outgoing_Relationships string
 		Incoming_Relationships string
 	}
+	// JSON representation of a relationship
 	RelationshipResponse struct {
 		Start      string
 		Data       map[string]string
@@ -37,6 +41,7 @@ type (
 		Type       string
 		End        string
 	}
+	// JSON representation of an error condition
 	ErrorResponse struct {
 		Message    string
 		Exception  string
@@ -191,8 +196,8 @@ func gocyTableHandler(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
-	s := new(GoneoServer)
+func NewGoneoServer(db goneodb.DatabaseService) GoneoServer {
+	s := new(goneoServer)
 
 	s.router = gin.Default()
 	s.binding = ":7474"
@@ -222,13 +227,13 @@ func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 	return s
 }
 
-func (s *GoneoServer) Bind(binding string) *GoneoServer {
+func (s *goneoServer) Bind(binding string) GoneoServer {
 	s.binding = binding
 
 	return s
 }
 
-func (s *GoneoServer) Start() {
+func (s *goneoServer) Start() {
 
 	s.router.Run(s.binding)
 }

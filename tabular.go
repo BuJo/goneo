@@ -7,6 +7,7 @@ import (
 	"text/tabwriter"
 )
 
+// Describes information in a tabular format.
 type TabularData struct {
 	line []map[string]interface{}
 }
@@ -45,9 +46,13 @@ func (t *TabularData) String() string {
 
 	return b.String()
 }
+
+// Return count of lines
 func (t *TabularData) Len() int {
 	return len(t.line)
 }
+
+// Return column names
 func (t *TabularData) Columns() []string {
 	cols := make([]string, 0)
 	for k, _ := range t.line[0] {
@@ -55,15 +60,21 @@ func (t *TabularData) Columns() []string {
 	}
 	return cols
 }
+
+// Return a single field
 func (t *TabularData) Get(row int, column string) interface{} {
 	return t.line[row][column]
 }
+
+// BUG(Jo): TabularData does not handle tables of different sizes.
+
+// Merge two tables.
 func (t *TabularData) Merge(t2 *TabularData) *TabularData {
 	merged := new(TabularData)
 
 	if t.Len() > 0 && t.Len() != t2.Len() {
 		// TODO: product? unsure how to handle...
-		log.Fatal("TODO: cannot handle differently sized tables: ", t.Len(), t2.Len())
+		log.Println("TODO: ignored differently sized tables: ", t.Len(), t2.Len())
 	} else if t.Len() == 0 {
 		merged.line = make([]map[string]interface{}, t2.Len(), t2.Len())
 

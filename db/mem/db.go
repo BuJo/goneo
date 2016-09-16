@@ -1,3 +1,4 @@
+// Simple memory based implementation of DatabaseService.
 package mem
 
 import (
@@ -12,6 +13,7 @@ type databaseService struct {
 	relationships []Relation
 }
 
+// Create a DB instance of a simple memory backed graph DB
 func NewDb() DatabaseService {
 	db := new(databaseService)
 

@@ -5,6 +5,7 @@ import (
 	. "goneo/db"
 )
 
+// Format the given DB in Graphviz format.
 func DumpDot(db DatabaseService) string {
 
 	str := "digraph G {\n"

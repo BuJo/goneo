@@ -6,7 +6,11 @@ import (
 	"goneo/db/mem"
 )
 
-type UniverseGenerator struct {
+type DatabaseGenerator interface {
+	Generate() DatabaseService
+}
+
+type universeGenerator struct {
 	db DatabaseService
 
 	crew     []Node
@@ -14,8 +18,10 @@ type UniverseGenerator struct {
 	enemies  []Node
 }
 
-func NewUniverseGenerator() *UniverseGenerator {
-	gen := new(UniverseGenerator)
+// Generator for an in-memory database containing information about
+// a reasonably popular sci-fi TV series.
+func NewUniverseGenerator() DatabaseGenerator {
+	gen := new(universeGenerator)
 
 	gen.db = mem.NewDb()
 
@@ -26,11 +32,11 @@ func NewUniverseGenerator() *UniverseGenerator {
 	return gen
 }
 
-func (gen *UniverseGenerator) Generate() DatabaseService {
+func (gen *universeGenerator) Generate() DatabaseService {
 	return gen.db
 }
 
-func (gen *UniverseGenerator) addMeta() {
+func (gen *universeGenerator) addMeta() {
 	creator := gen.db.NewNode("Person")
 	creator.SetProperty("creator", "Joss Whedon")
 
@@ -49,7 +55,7 @@ func (gen *UniverseGenerator) addMeta() {
 		movie.RelateTo(t, "IS_TAGGED")
 	}
 }
-func (gen *UniverseGenerator) addCharacters() {
+func (gen *universeGenerator) addCharacters() {
 	ship := gen.db.NewNode("Ship")
 	ship.SetProperty("character", "Firefly")
 
@@ -81,7 +87,7 @@ func (gen *UniverseGenerator) addCharacters() {
 	gen.characters(gen.crew...).are("CREW").of(ship)
 	gen.character(mal).is("CAPTAIN").of(ship)
 }
-func (gen *UniverseGenerator) addEpisodes() {
+func (gen *universeGenerator) addEpisodes() {
 
 	ep01 := gen.createEpisode(1, "")
 	ep02 := gen.createEpisode(2, "Train Job")
@@ -96,7 +102,7 @@ func (gen *UniverseGenerator) addEpisodes() {
 	gen.episodes = []Node{ep01, ep02, ep13}
 }
 
-func (gen *UniverseGenerator) createEpisode(nr int, title string) Node {
+func (gen *universeGenerator) createEpisode(nr int, title string) Node {
 	ep := gen.db.NewNode("Episode")
 	ep.SetProperty("episode", fmt.Sprintf("%d", nr))
 	ep.SetProperty("title", title)
@@ -109,7 +115,7 @@ type actorBuilder struct {
 	db DatabaseService
 }
 
-func (gen *UniverseGenerator) actor(name string) *actorBuilder {
+func (gen *universeGenerator) actor(name string) *actorBuilder {
 	b := new(actorBuilder)
 	b.db = gen.db
 
@@ -151,7 +157,7 @@ type characterBuilder struct {
 	db DatabaseService
 }
 
-func (gen *UniverseGenerator) character(char Node) *characterBuilder {
+func (gen *universeGenerator) character(char Node) *characterBuilder {
 	b := new(characterBuilder)
 	b.db = gen.db
 
@@ -159,7 +165,7 @@ func (gen *UniverseGenerator) character(char Node) *characterBuilder {
 
 	return b
 }
-func (gen *UniverseGenerator) characters(chars ...Node) *characterBuilder {
+func (gen *universeGenerator) characters(chars ...Node) *characterBuilder {
 
 	b := new(characterBuilder)
 	b.db = gen.db

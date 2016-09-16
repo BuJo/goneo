@@ -73,10 +73,18 @@ func main() {
 
 	}
 
-	port := os.Getenv("PORT")
-	if port != "" {
+	server := web.NewGoneoServer(db)
+
+	if port := os.Getenv("PORT"); port != "" {
 		*binding = ":" + port
 	}
 
-	web.NewGoneoServer(db).Bind(*binding).Start()
+	server.Bind(*binding)
+
+	if apikey := os.Getenv("HOSTEDGRAPHITE_APIKEY"); apikey != "" {
+		host, port := "carbon.hostedgraphite.com", 2003
+		server.EnableGraphite(host, port, apikey)
+	}
+
+	server.Start()
 }

@@ -6,12 +6,16 @@ import (
 	goneodb "github.com/BuJo/goneo/db"
 	"github.com/BuJo/goneo/db/mem"
 	"github.com/gin-gonic/gin"
+	Graphite "github.com/marpaia/graphite-golang"
+	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type GoneoServer interface {
 	Bind(binding string) GoneoServer // default: :7474
+	EnableGraphite(host string, port int, prefix string, notlogged ...string) GoneoServer
 	Start()
 }
 
@@ -204,6 +208,61 @@ func NewGoneoServer(db goneodb.DatabaseService) GoneoServer {
 
 	s.router.Use(func(c *gin.Context) { c.Set("db", db) })
 
+	return s
+}
+
+func (s *goneoServer) Bind(binding string) GoneoServer {
+	s.binding = binding
+
+	return s
+}
+
+// Enable sending Graphite metrics
+// Output:
+// 	<prefix>.http.time
+func (s *goneoServer) EnableGraphite(host string, port int, prefix string, notlogged ...string) GoneoServer {
+	graphite := &Graphite.Graphite{Host: host, Port: port, Protocol: "udp", Prefix: prefix}
+	err := graphite.Connect()
+
+	if err != nil {
+		log.Print("failed to connect to graphite", err.Error())
+		graphite = Graphite.NewGraphiteNop(host, port)
+	}
+
+	var skip map[string]struct{}
+
+	if length := len(notlogged); length > 0 {
+		skip = make(map[string]struct{}, length)
+
+		for _, path := range notlogged {
+			skip[path] = struct{}{}
+		}
+	}
+
+	s.router.Use(func(c *gin.Context) {
+		// Start timer
+		start := time.Now()
+		path := c.Request.URL.Path
+
+		log.Print("starting timer for graphite")
+
+		// Process request
+		c.Next()
+
+		// Log only when path is not being skipped
+		if _, ok := skip[path]; !ok {
+			// Stop timer
+			log.Print("stopping timer for graphite")
+
+			graphite.SimpleSend("http.time", strconv.FormatFloat(time.Now().Sub(start).Seconds(), 'f', -1, 32))
+		}
+	})
+
+	return s
+}
+
+func (s *goneoServer) Start() {
+
 	datarouter := s.router.Group("/db/data")
 
 	s.router.GET("/graphviz", graphvizHandler)
@@ -223,17 +282,6 @@ func NewGoneoServer(db goneodb.DatabaseService) GoneoServer {
 	{
 		relrouter.GET("/:id", relationshipHandler)
 	}
-
-	return s
-}
-
-func (s *goneoServer) Bind(binding string) GoneoServer {
-	s.binding = binding
-
-	return s
-}
-
-func (s *goneoServer) Start() {
 
 	s.router.Run(s.binding)
 }

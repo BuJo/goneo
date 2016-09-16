@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"goneo"
 	goneodb "goneo/db"
+	"goneo/db/mem"
 	"net/http"
 	"strconv"
 )
@@ -121,9 +122,56 @@ func nodeRelHandler(c *gin.Context) {
 func graphvizHandler(c *gin.Context) {
 	db, _ := c.MustGet("db").(goneodb.DatabaseService)
 
+	gocy := c.PostForm("gocy")
+	if gocy != "" {
+		table, err := goneo.Evaluate(db, gocy)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"status": err})
+			return
+		}
+
+		newdb := mem.NewDb()
+
+		nodemapping := make(map[int]goneodb.Node)
+		// Create Nodes
+		for i := 0; i < table.Len(); i++ {
+			for _, col := range table.Columns() {
+				// For each Node element copy the node
+				if node, isnode := table.Get(i, col).(goneodb.Node); isnode {
+					newnode := newdb.NewNode()
+					nodemapping[node.Id()] = newnode
+					// TODO: copy labels/props
+				}
+			}
+		}
+
+		// Create Relations
+		for i := 0; i < table.Len(); i++ {
+			for _, col := range table.Columns() {
+				if node, isnode := table.Get(i, col).(goneodb.Node); isnode {
+					newnode, _ := nodemapping[node.Id()]
+					for _, rel := range node.Relations(goneodb.Outgoing) {
+						// For each Relation check if the target is mapped as well and
+						// create a new edge
+						if newtarget, ismapped := nodemapping[rel.End().Id()]; ismapped {
+							newnode.RelateTo(newtarget, rel.Type())
+							// TODO: copy props
+						}
+					}
+				}
+			}
+		}
+
+		db = newdb
+	}
+
 	dot := goneo.DumpDot(db)
 
 	c.String(http.StatusOK, dot)
+}
+
+func testHandler(c *gin.Context) {
+	c.String(http.StatusOK, "<html><head><title>Test gocy</title><script async=\"async\" crossorigin=\"anonymous\" src=\"https://github.com/mdaines/viz.js/releases/download/v1.3.0/viz.js\"></script></head><body></body></html>")
 }
 
 func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
@@ -136,7 +184,10 @@ func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 
 	datarouter := s.router.Group("/db/data")
 
-	datarouter.GET("/graphviz", graphvizHandler)
+	s.router.GET("/graphviz", graphvizHandler)
+	s.router.POST("/graphviz", graphvizHandler)
+	s.router.GET("/", testHandler)
+	s.router.GET("/index.html", testHandler)
 
 	noderouter := datarouter.Group("/node")
 	{

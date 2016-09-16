@@ -3,7 +3,7 @@
 	"heroku": {
 		"goVersion": "go1.7",
 		"install": [
-			"./..."
+			"./goneo/..."
 		]
 	},
 	"ignore": "test",
@@ -57,5 +57,5 @@
 			"revisionTime": "2016-09-12T16:56:03Z"
 		}
 	],
-	"rootPath": "goneo"
+	"rootPath": "github.com/BuJo/goneo"
 }

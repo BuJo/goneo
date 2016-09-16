@@ -126,7 +126,7 @@ func graphvizHandler(c *gin.Context) {
 	if gocy != "" {
 		table, err := goneo.Evaluate(db, gocy)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"status": err})
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 			return
 		}
 
@@ -181,7 +181,7 @@ func gocyTableHandler(c *gin.Context) {
 	if gocy != "" {
 		table, err := goneo.Evaluate(db, gocy)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"status": err})
+			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 			return
 		}
 

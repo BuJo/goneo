@@ -23,6 +23,7 @@ import (
 	"github.com/BuJo/goneo/web"
 	"log"
 	"math/rand"
+	"os"
 )
 
 var (
@@ -70,6 +71,11 @@ func main() {
 
 		nodeB.RelateTo(nodeC, "BELONGS_TO")
 
+	}
+
+	port := os.Getenv("PORT")
+	if port != "" {
+		*binding = ":" + port
 	}
 
 	web.NewGoneoServer(db).Bind(*binding).Start()

@@ -1,25 +1,16 @@
 package web
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	goneodb "goneo/db"
-
-	"io"
-	"log"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type (
 	GoneoServer struct {
 		binding string
-
-		router *mux.Router
-
-		db goneodb.DatabaseService
+		db      goneodb.DatabaseService
 	}
 
 	ServiceResponse struct {
@@ -56,93 +47,59 @@ var (
 	currentServer *GoneoServer = nil
 )
 
-func baseNodeHandler(w http.ResponseWriter, req *http.Request) {
+func baseNodeHandler(c *gin.Context) {
 
 }
-func getUrl(urlName string, vars ...string) (string, error) {
-	url, err := currentServer.router.Get(urlName).URL(vars...)
-	if err != nil {
-		fmt.Println("error fetching url:", err)
-		return "", err
-	}
-	return url.String(), nil
-}
-func createNodeHandler(w http.ResponseWriter, req *http.Request) {
-	var data map[string]string
 
-	decoder := json.NewDecoder(req.Body)
-	for {
-		if err := decoder.Decode(&data); err == io.EOF {
-			break
-		} else if err != nil {
-			log.Fatal(err)
-			return
-		}
+func createNodeHandler(c *gin.Context) {
 
+	var json map[string]string
+	if c.BindJSON(&json) == nil {
 		node := currentServer.db.NewNode()
-		for key, val := range data {
+		for key, val := range json {
 			node.SetProperty(key, val)
 		}
+		c.JSON(http.StatusCreated, gin.H{"status": "created node"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
 	}
-
 }
-func relationshipHandler(w http.ResponseWriter, req *http.Request) {
+func relationshipHandler(c *gin.Context) {
 }
-func nodeHandler(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+func nodeHandler(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	res := NodeResponse{}
-
-	res.Self, _ = getUrl("Node", "id", vars["id"])
-	res.Outgoing_Relationships, _ = getUrl("NodeRelationships", "id", vars["id"], "direction", "out")
-
-	id, _ := strconv.Atoi(vars["id"])
-	node, noderr := currentServer.db.GetNode(id)
-	if noderr != nil {
-		fmt.Println(noderr)
+	node, nodeerr := currentServer.db.GetNode(id)
+	if nodeerr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": nodeerr})
 		return
 	}
 
+	res := NodeResponse{}
+	res.Self = "/db/data/node/" + c.Param("id")
+	res.Outgoing_Relationships = "/db/data/node/" + c.Param("id") + "/direction/out"
+
 	res.Data = node.Properties()
 
-	b, err := json.MarshalIndent(res, " ", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	w.Write(b)
+	c.JSON(http.StatusOK, res)
 }
-func nodeRelHandler(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+func nodeRelHandler(c *gin.Context) {
+	direction := goneodb.DirectionFromString(c.Param("direction"))
+	nodeId, _ := strconv.Atoi(c.Param("id"))
+	node, _ := currentServer.db.GetNode(nodeId)
 
 	res := make([]RelationshipResponse, 0, 5)
 
-	nodeId, _ := strconv.Atoi(vars["id"])
-	node, _ := currentServer.db.GetNode(nodeId)
-
-	for _, rel := range node.Relations(goneodb.DirectionFromString(vars["direction"])) {
+	for _, rel := range node.Relations(direction) {
 		r := RelationshipResponse{}
-		r.Start, _ = getUrl("Node", "id", strconv.Itoa(rel.Start().Id()))
-		r.Self, _ = getUrl("Relationship", "id", strconv.Itoa(rel.Id()))
-		r.End, _ = getUrl("Node", "id", strconv.Itoa(rel.End().Id()))
+		r.Start = "/db/data/node/" + strconv.Itoa(rel.Start().Id())
+		r.Self = "/db/data/relationships/" + strconv.Itoa(rel.Id())
+		r.End = "/db/data/node/" + strconv.Itoa(rel.End().Id())
 
 		res = append(res, r)
 	}
-	b, err := json.MarshalIndent(res, " ", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	w.Write(b)
-}
-func baseHandler(w http.ResponseWriter, req *http.Request) {
-	res := ServiceResponse{
-		Node: "/db/data/node",
-	}
 
-	b, err := json.MarshalIndent(res, " ", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	w.Write(b)
+	c.JSON(http.StatusOK, res)
 }
 
 func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
@@ -164,22 +121,19 @@ func (s *GoneoServer) Bind(binding string) *GoneoServer {
 
 func (s *GoneoServer) Start() {
 
-	s.router = mux.NewRouter()
+	router := gin.Default()
 
-	router := s.router.PathPrefix("/db/data").Subrouter()
-	router.HandleFunc("/", baseHandler)
-	router.HandleFunc("/node", baseNodeHandler).Methods("GET")
-	router.HandleFunc("/node", createNodeHandler).Methods("POST")
-	router.HandleFunc("/node/{id}", nodeHandler).Name("Node")
-	router.HandleFunc("/node/{id}/relationships/{direction}", nodeRelHandler).Name("NodeRelationships")
-	router.HandleFunc("/relationship/{id}", relationshipHandler).Name("Relationship")
-
-	srv := &http.Server{
-		Addr:           s.binding,
-		Handler:        s.router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+	noderouter := router.Group("/db/data/node")
+	{
+		noderouter.GET("/", baseNodeHandler)
+		noderouter.POST("/", createNodeHandler)
+		noderouter.GET("/:id", nodeHandler)
+		noderouter.GET("/:id/relationships/:direction", nodeRelHandler)
 	}
-	log.Fatal(srv.ListenAndServe())
+	relrouter := router.Group("/db/data/relationship")
+	{
+		relrouter.GET("/relationship/:id", relationshipHandler)
+	}
+
+	router.Run(s.binding)
 }

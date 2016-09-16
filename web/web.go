@@ -9,8 +9,8 @@ import (
 
 type (
 	GoneoServer struct {
+		router  *gin.Engine
 		binding string
-		db      goneodb.DatabaseService
 	}
 
 	ServiceResponse struct {
@@ -43,19 +43,16 @@ type (
 	}
 )
 
-var (
-	currentServer *GoneoServer = nil
-)
-
 func baseNodeHandler(c *gin.Context) {
-
+	c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
 }
 
 func createNodeHandler(c *gin.Context) {
+	db, _ := c.MustGet("db").(goneodb.DatabaseService)
 
 	var json map[string]string
 	if c.BindJSON(&json) == nil {
-		node := currentServer.db.NewNode()
+		node := db.NewNode()
 		for key, val := range json {
 			node.SetProperty(key, val)
 		}
@@ -65,13 +62,20 @@ func createNodeHandler(c *gin.Context) {
 	}
 }
 func relationshipHandler(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
 }
 func nodeHandler(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	db, _ := c.MustGet("db").(goneodb.DatabaseService)
 
-	node, nodeerr := currentServer.db.GetNode(id)
+	nodeId, idErr := strconv.Atoi(c.Param("id"))
+	if idErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad id"})
+		return
+	}
+
+	node, nodeerr := db.GetNode(nodeId)
 	if nodeerr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": nodeerr})
+		c.JSON(http.StatusNotFound, gin.H{"status": "not found"})
 		return
 	}
 
@@ -84,9 +88,20 @@ func nodeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func nodeRelHandler(c *gin.Context) {
+	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+
 	direction := goneodb.DirectionFromString(c.Param("direction"))
-	nodeId, _ := strconv.Atoi(c.Param("id"))
-	node, _ := currentServer.db.GetNode(nodeId)
+	nodeId, idErr := strconv.Atoi(c.Param("id"))
+	if idErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "bad id"})
+		return
+	}
+
+	node, nodeerr := db.GetNode(nodeId)
+	if nodeerr != nil {
+		c.JSON(http.StatusNotFound, gin.H{"status": "not found"})
+		return
+	}
 
 	res := make([]RelationshipResponse, 0, 5)
 
@@ -105,10 +120,22 @@ func nodeRelHandler(c *gin.Context) {
 func NewGoneoServer(db goneodb.DatabaseService) *GoneoServer {
 	s := new(GoneoServer)
 
-	s.db = db
+	s.router = gin.Default()
 	s.binding = ":7474"
 
-	currentServer = s
+	s.router.Use(func(c *gin.Context) { c.Set("db", db) })
+
+	noderouter := s.router.Group("/db/data/node")
+	{
+		noderouter.GET("/", baseNodeHandler)
+		noderouter.POST("/", createNodeHandler)
+		noderouter.GET("/:id", nodeHandler)
+		noderouter.GET("/:id/relationships/:direction", nodeRelHandler)
+	}
+	relrouter := s.router.Group("/db/data/relationship")
+	{
+		relrouter.GET("/:id", relationshipHandler)
+	}
 
 	return s
 }
@@ -121,19 +148,5 @@ func (s *GoneoServer) Bind(binding string) *GoneoServer {
 
 func (s *GoneoServer) Start() {
 
-	router := gin.Default()
-
-	noderouter := router.Group("/db/data/node")
-	{
-		noderouter.GET("/", baseNodeHandler)
-		noderouter.POST("/", createNodeHandler)
-		noderouter.GET("/:id", nodeHandler)
-		noderouter.GET("/:id/relationships/:direction", nodeRelHandler)
-	}
-	relrouter := router.Group("/db/data/relationship")
-	{
-		relrouter.GET("/relationship/:id", relationshipHandler)
-	}
-
-	router.Run(s.binding)
+	s.router.Run(s.binding)
 }

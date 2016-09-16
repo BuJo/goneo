@@ -89,17 +89,28 @@ func (gen *universeGenerator) addCharacters() {
 }
 func (gen *universeGenerator) addEpisodes() {
 
-	ep01 := gen.createEpisode(1, "")
+	ep01 := gen.createEpisode(1, "Serenity")
 	ep02 := gen.createEpisode(2, "Train Job")
-	ep13 := gen.createEpisode(13, "War Stories")
+	ep03 := gen.createEpisode(3, "Bushwhacked")
+	ep04 := gen.createEpisode(4, "Shindig")
+	ep05 := gen.createEpisode(5, "Safe")
+	ep06 := gen.createEpisode(6, "Our Mrs. Reynolds")
+	ep07 := gen.createEpisode(7, "Jaynestown")
+	ep08 := gen.createEpisode(8, "Out of Gas")
+	ep09 := gen.createEpisode(9, "Ariel")
+	ep10 := gen.createEpisode(10, "War Stories")
+	ep11 := gen.createEpisode(11, "Trash")
+	ep12 := gen.createEpisode(12, "The Message")
+	ep13 := gen.createEpisode(13, "Heart of Gold")
+	ep14 := gen.createEpisode(14, "Objects in Space")
 
 	niska := gen.enemies[2]
 
 	niska.RelateTo(ep02, "APPEARED_IN")
-	ep02.RelateTo(ep13, "ARCS_TO")
-	niska.RelateTo(ep13, "APPEARED_IN")
+	ep02.RelateTo(ep10, "ARCS_TO")
+	niska.RelateTo(ep10, "APPEARED_IN")
 
-	gen.episodes = []Node{ep01, ep02, ep13}
+	gen.episodes = []Node{ep01, ep02, ep03, ep04, ep05, ep06, ep07, ep08, ep09, ep10, ep11, ep12, ep13, ep14}
 }
 
 func (gen *universeGenerator) createEpisode(nr int, title string) Node {

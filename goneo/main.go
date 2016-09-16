@@ -4,6 +4,7 @@ Flags:
 
 	-size=[small|big|universe]
 	-bind=:7474
+	-version
 
 Sizes:
 
@@ -15,10 +16,11 @@ package main
 
 import (
 	"flag"
-	. "goneo"
-	. "goneo/db"
-	"goneo/db/mem"
-	"goneo/web"
+	"fmt"
+	. "github.com/BuJo/goneo"
+	. "github.com/BuJo/goneo/db"
+	"github.com/BuJo/goneo/db/mem"
+	"github.com/BuJo/goneo/web"
 	"log"
 	"math/rand"
 )
@@ -26,12 +28,20 @@ import (
 var (
 	binding = flag.String("bind", ":7474", "Bind to ip/port")
 	size    = flag.String("size", "small", "Size of generated graph")
+	version = flag.Bool("version", false, "Print version information")
+
+	buildversion, buildtime string = "SNAPSHOT", ""
 )
 
 func main() {
 	flag.Parse()
 
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
+
+	if *version {
+		fmt.Println("goneo version", buildversion, "(", buildtime, ")")
+		return
+	}
 
 	var db DatabaseService
 

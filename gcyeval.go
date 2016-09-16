@@ -2,10 +2,10 @@ package goneo
 
 import (
 	"errors"
-	. "goneo/db"
-	"goneo/db/mem"
-	"goneo/gcy"
-	"goneo/sgi"
+	. "github.com/BuJo/goneo/db"
+	"github.com/BuJo/goneo/db/mem"
+	"github.com/BuJo/goneo/gcy"
+	"github.com/BuJo/goneo/sgi"
 	"log"
 )
 

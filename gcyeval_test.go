@@ -2,7 +2,7 @@ package goneo
 
 import (
 	"fmt"
-	. "goneo/db"
+	. "github.com/BuJo/goneo/db"
 	"strings"
 	"testing"
 )

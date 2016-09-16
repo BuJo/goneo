@@ -1,11 +1,10 @@
 language: go
 go: 1.7
 sudo: false
-before_script:
-  - go vet .
 install:
   - go get github.com/kardianos/govendor
   - govendor sync
-  - ln -s $PWD $GOPATH/src/goneo
+  - govendor list
 script:
-  - go test ./...
+  - govendor vet +local
+  - govendor test +local

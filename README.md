@@ -11,9 +11,20 @@ This software contains:
 
 ### Hacking
 
-
 [![Build Status](https://travis-ci.org/BuJo/goneo.svg?branch=master)](https://travis-ci.org/BuJo/goneo)
 
+This project uses `govendor` to handle dependencies. See the [govendor quickstart][govquick] for more information.
+
+Testing:
+
+	govendor sync
+	govendor test +local
+
+#### Release
+
+	govendor sync
+	VERSION=v1.0
+	go install -ldflags "-X main.buildversion=$VERSION -X main.buildtime=$(date +%FT%X%z)"
 
 ### Literature
 
@@ -29,3 +40,5 @@ This software contains:
 * Gati, G. (1979). Further annotated bibliography on the isomorphism disease. Journal of Graph Theory 3, 95–109.
 * An Algorithm for Subgraph Isomorphism
   J. R. ULLMANN
+
+[govquick]: https://github.com/kardianos/govendor#quick-start-also-see-the-faq

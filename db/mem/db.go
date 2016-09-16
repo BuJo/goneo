@@ -4,7 +4,7 @@ package mem
 import (
 	"errors"
 	"fmt"
-	. "goneo/db"
+	. "github.com/BuJo/goneo/db"
 	"sort"
 )
 

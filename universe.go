@@ -2,8 +2,8 @@ package goneo
 
 import (
 	"fmt"
-	. "goneo/db"
-	"goneo/db/mem"
+	. "github.com/BuJo/goneo/db"
+	"github.com/BuJo/goneo/db/mem"
 )
 
 type DatabaseGenerator interface {

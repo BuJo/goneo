@@ -1,7 +1,7 @@
 package web
 
 import (
-	"goneo/db/mem"
+	"github.com/BuJo/goneo/db/mem"
 )
 
 func ExampleNewGoneoServer() {

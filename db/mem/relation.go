@@ -2,7 +2,7 @@ package mem
 
 import (
 	"fmt"
-	. "goneo/db"
+	. "github.com/BuJo/goneo/db"
 )
 
 type relation struct {

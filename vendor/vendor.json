@@ -3,7 +3,7 @@
 	"heroku": {
 		"goVersion": "go1.7",
 		"install": [
-			"./goneo/..."
+			"./..."
 		]
 	},
 	"ignore": "test",

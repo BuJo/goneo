@@ -58,6 +58,8 @@ func baseNodeHandler(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
 }
 
+// BUG(Jo): createNodeHandler can not create nodes with labels
+
 func createNodeHandler(c *gin.Context) {
 	db, _ := c.MustGet("db").(goneodb.DatabaseService)
 

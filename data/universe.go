@@ -1,13 +1,9 @@
-package goneo
+package data
 
 import (
 	"fmt"
 	. "github.com/BuJo/goneo/db"
 )
-
-type DatabaseGenerator interface {
-	Generate() DatabaseService
-}
 
 type universeGenerator struct {
 	db DatabaseService

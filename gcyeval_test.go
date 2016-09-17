@@ -1,6 +1,7 @@
 package goneo
 
 import (
+	"github.com/BuJo/goneo/data"
 	"github.com/BuJo/goneo/db"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ func setupTestDb(t *testing.T) db.DatabaseService {
 		t.Fatal(err.Error())
 	}
 
-	return NewUniverseGenerator(db).Generate()
+	return data.NewUniverseGenerator(db).Generate()
 }
 
 func TestBasicStartQuery(t *testing.T) {

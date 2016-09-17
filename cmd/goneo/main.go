@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BuJo/goneo"
+	"github.com/BuJo/goneo/data"
 	"github.com/BuJo/goneo/web"
 	"log"
 	"math/rand"
@@ -45,7 +46,7 @@ func main() {
 	db, _ := goneo.OpenDb("mem:testdb")
 
 	if *size == "universe" {
-		db = goneo.NewUniverseGenerator(db).Generate()
+		db = data.NewUniverseGenerator(db).Generate()
 	} else if *size == "big" {
 		maxNodes := 5000
 		rand.Seed(42)

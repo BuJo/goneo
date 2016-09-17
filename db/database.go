@@ -16,12 +16,14 @@ type Node interface {
 
 type Relation interface {
 	Id() int
+	String() string
 	Start() Node
 	End() Node
 	Type() string
 
 	Property(prop string) interface{}
-	String() string
+	Properties() map[string]interface{}
+	SetProperty(nam string, val interface{})
 }
 
 type DatabaseService interface {

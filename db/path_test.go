@@ -20,12 +20,14 @@ func (*mocknode) Labels() []string                             { return nil }
 func (m *mocknode) RelateTo(end Node, relType string) Relation { return &mockrel{m, end} }
 func (*mocknode) Relations(dir Direction) []Relation           { return nil }
 
-func (*mockrel) Id() int                          { return 0 }
-func (m *mockrel) Start() Node                    { return m.start }
-func (m *mockrel) End() Node                      { return m.end }
-func (*mockrel) Type() string                     { return "HAS" }
-func (*mockrel) Property(prop string) interface{} { return nil }
-func (*mockrel) String() string                   { return "HAS" }
+func (*mockrel) Id() int                                 { return 0 }
+func (m *mockrel) Start() Node                           { return m.start }
+func (m *mockrel) End() Node                             { return m.end }
+func (*mockrel) Type() string                            { return "HAS" }
+func (*mockrel) Property(prop string) interface{}        { return nil }
+func (*mockrel) Properties() map[string]interface{}      { return nil }
+func (*mockrel) SetProperty(nam string, val interface{}) {}
+func (*mockrel) String() string                          { return "HAS" }
 
 func ExampleNewPathBuilder() {
 	var start Node = &mocknode{"a"}

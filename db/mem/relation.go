@@ -25,6 +25,15 @@ func (rel *relation) String() string {
 func (rel *relation) Property(prop string) interface{} {
 	return rel.properties[prop]
 }
+func (rel *relation) Properties() map[string]interface{} {
+	return rel.properties
+}
+func (rel *relation) SetProperty(name string, val interface{}) {
+	if rel.properties == nil {
+		rel.properties = make(map[string]interface{})
+	}
+	rel.properties[name] = val
+}
 
 func (rel *relation) Type() string { return rel.typ }
 func (rel *relation) Id() int      { return rel.id }

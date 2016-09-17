@@ -16,6 +16,7 @@ type universeGenerator struct {
 	crew     []Node
 	episodes []Node
 	enemies  []Node
+	series   Node
 }
 
 // Generator for an in-memory database containing information about
@@ -37,21 +38,20 @@ func (gen *universeGenerator) Generate() DatabaseService {
 }
 
 func (gen *universeGenerator) addMeta() {
-	creator := gen.db.NewNode("Person")
-	creator.SetProperty("creator", "Joss Whedon")
+	creator := gen.actor("Joss Whedon").actor
 
-	series := gen.db.NewNode("Series")
-	series.SetProperty("series", "Firefly")
+	gen.series = gen.db.NewNode("Series")
+	gen.series.SetProperty("series", "Firefly")
 
 	movie := gen.db.NewNode("Movie")
 	movie.SetProperty("movie", "Serenity")
 
-	creator.RelateTo(series, "CREATED")
+	creator.RelateTo(gen.series, "CREATED")
 
 	for _, tag := range []string{"Adventure", "Drama", "Sci-Fi"} {
 		t := gen.db.NewNode("Tag")
 		t.SetProperty("tag", tag)
-		series.RelateTo(t, "IS_TAGGED")
+		gen.series.RelateTo(t, "IS_TAGGED")
 		movie.RelateTo(t, "IS_TAGGED")
 	}
 }
@@ -70,7 +70,6 @@ func (gen *universeGenerator) addCharacters() {
 	sheperd := gen.actor("Ron Glass").played("Shepherd Derrial Book")
 	gen.actor("Skylar Roberge").played("River Tam")
 	gen.actor("Zac Efron").played("Simon Tam")
-	gen.actor("Joss Whedon").played("Man at Funeral")
 	blue1 := gen.actor("Jeff Ricketts").played("Blue Glove Man #1")
 	blue2 := gen.actor("Dennis Cockrum").played("Blue Glove Man #2")
 	niska := gen.actor("Michael Fairman").played("Adelai Niska")
@@ -82,12 +81,15 @@ func (gen *universeGenerator) addCharacters() {
 	gen.crew = []Node{mal, zoe, wash, inara, jayne, kaylee, simon, river, sheperd}
 	gen.enemies = []Node{blue1, blue2, niska, operative}
 
-	gen.characters(gen.enemies...).are("ENEMY").of(gen.crew...)
+	gen.characters(gen.enemies...).are("ENEMY").of(ship)
 
 	gen.characters(gen.crew...).are("CREW").of(ship)
 	gen.character(mal).is("CAPTAIN").of(ship)
 }
 func (gen *universeGenerator) addEpisodes() {
+
+	season := gen.db.NewNode("Season")
+	gen.series.RelateTo(season, "HAS_SEASON")
 
 	ep01 := gen.createEpisode(1, "Serenity")
 	ep02 := gen.createEpisode(2, "Train Job")
@@ -110,7 +112,20 @@ func (gen *universeGenerator) addEpisodes() {
 	ep02.RelateTo(ep10, "ARCS_TO")
 	niska.RelateTo(ep10, "APPEARED_IN")
 
+	funman := gen.actor("Joss Whedon").played("Man at Funeral")
+	funman.RelateTo(ep12, "APPEARED_IN")
+
 	gen.episodes = []Node{ep01, ep02, ep03, ep04, ep05, ep06, ep07, ep08, ep09, ep10, ep11, ep12, ep13, ep14}
+
+	var e0 Node
+	for _, e1 := range gen.episodes {
+		if e0 != nil {
+			e0.RelateTo(e1, "LEADS_TO")
+		}
+		e0 = e1
+	}
+
+	season.RelateTo(ep01, "BEGINS_WITH")
 }
 
 func (gen *universeGenerator) createEpisode(nr int, title string) Node {

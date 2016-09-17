@@ -21,7 +21,6 @@ import (
 	"github.com/BuJo/goneo/data"
 	"github.com/BuJo/goneo/web"
 	"log"
-	"math/rand"
 	"os"
 )
 
@@ -48,25 +47,9 @@ func main() {
 	if *size == "universe" {
 		db = data.NewUniverseGenerator(db).Generate()
 	} else if *size == "big" {
-		maxNodes := 5000
-		rand.Seed(42)
-
-		db.NewNode()
-		for n := db.NewNode(); n.Id() < maxNodes; n = db.NewNode() {
-			t, _ := db.GetNode(rand.Intn(n.Id()))
-			n.RelateTo(t, "HAS")
-		}
+		db = data.NewLargeRandomGenerator(db).Generate()
 	} else {
-		nodeA := db.NewNode()
-		nodeA.SetProperty("foo", "bar")
-
-		nodeB := db.NewNode()
-		nodeA.RelateTo(nodeB, "BELONGS_TO")
-
-		nodeC := db.NewNode()
-
-		nodeB.RelateTo(nodeC, "BELONGS_TO")
-
+		db = data.NewSmallGenerator(db).Generate()
 	}
 
 	server := web.NewGoneoServer(db)

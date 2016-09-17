@@ -109,3 +109,11 @@ func TestParse(t *testing.T) {
 	}
 
 }
+
+func TestParseCaseSensitivity(t *testing.T) {
+	_, err := Parse("goneo", "START n=node(*) RETURN n AS node")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}

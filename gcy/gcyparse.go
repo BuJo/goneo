@@ -445,19 +445,19 @@ func (p *parser) parseQuery() *Query {
 	for p.tok.typ != itemEOF {
 		switch p.tok.typ {
 		case itemStart:
-			p.expect("start")
+			p.expectType(itemStart)
 			query.Roots = p.parseStart()
 		case itemMatch:
-			p.expect("match")
+			p.expectType(itemMatch)
 			query.Match = p.parseMatch()
 		case itemDelete:
-			p.expect("delete")
+			p.expectType(itemDelete)
 			query.Deletes = p.parseDelete()
 		case itemCreate:
-			p.expect("create")
+			p.expectType(itemCreate)
 			query.Creates = p.parseCreate()
 		case itemReturn:
-			p.expect("return")
+			p.expectType(itemReturn)
 			query.Returns = p.parseReturns()
 		default:
 			p.error("unknown top level type: " + p.tok.String())

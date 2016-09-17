@@ -335,8 +335,9 @@ Loop:
 				return l.errorf("bad character %#U", r)
 			}
 			switch {
-			case key[word] > itemKeyword:
-				l.emit(key[word])
+			case key[strings.ToLower(word)] > itemKeyword:
+				// handle keywords regardless of case
+				l.emit(key[strings.ToLower(word)])
 			case word[0] == '.':
 				l.emit(itemField)
 			default:

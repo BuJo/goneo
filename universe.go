@@ -39,6 +39,7 @@ func (gen *universeGenerator) Generate() DatabaseService {
 
 func (gen *universeGenerator) addMeta() {
 	creator := gen.actor("Joss Whedon").actor
+	creator.SetProperty("creator", "Joss Whedon")
 
 	gen.series = gen.db.NewNode("Series")
 	gen.series.SetProperty("series", "Firefly")

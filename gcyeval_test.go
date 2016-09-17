@@ -1,8 +1,7 @@
 package goneo
 
 import (
-	"fmt"
-	. "github.com/BuJo/goneo/db"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -48,10 +47,9 @@ func TestPropertyRetMatch(t *testing.T) {
 func TestStartMatch(t *testing.T) {
 	db := NewUniverseGenerator().Generate()
 
-	creator, _ := db.GetNode(0)
-	fmt.Println(creator, creator.Relations(Both))
+	creators := db.FindNodeByProperty("creator", "Joss Whedon")
 
-	table, err := Evaluate(db, "start joss=node(0) match (joss)-->(o) return o.series")
+	table, err := Evaluate(db, "start joss=node("+strconv.Itoa(creators[0].Id())+") match (joss)-[:CREATED]->(o) return o.series")
 	NewTableTester(t, table, err).Has("o.series", "Firefly")
 }
 

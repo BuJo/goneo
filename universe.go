@@ -3,7 +3,6 @@ package goneo
 import (
 	"fmt"
 	. "github.com/BuJo/goneo/db"
-	"github.com/BuJo/goneo/db/mem"
 )
 
 type DatabaseGenerator interface {
@@ -21,10 +20,10 @@ type universeGenerator struct {
 
 // Generator for an in-memory database containing information about
 // a reasonably popular sci-fi TV series.
-func NewUniverseGenerator() DatabaseGenerator {
+func NewUniverseGenerator(db DatabaseService) DatabaseGenerator {
 	gen := new(universeGenerator)
 
-	gen.db = mem.NewDb()
+	gen.db = db
 
 	gen.addMeta()
 	gen.addCharacters()

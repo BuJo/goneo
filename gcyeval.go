@@ -3,7 +3,6 @@ package goneo
 import (
 	"errors"
 	. "github.com/BuJo/goneo/db"
-	"github.com/BuJo/goneo/db/mem"
 	"github.com/BuJo/goneo/gcy"
 	"github.com/BuJo/goneo/sgi"
 	"log"
@@ -56,7 +55,7 @@ func (q *query) evaluate(ctx evalContext) *TabularData {
 func (mm *match) evaluate(ctx evalContext) *TabularData {
 	m := mm.m
 
-	subgraph := mem.NewDb()
+	subgraph, _ := OpenDb("mem:temporary")
 
 	for _, p := range m.Paths {
 		var builder *PathBuilder

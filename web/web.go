@@ -4,7 +4,6 @@ package web
 import (
 	"github.com/BuJo/goneo"
 	goneodb "github.com/BuJo/goneo/db"
-	"github.com/BuJo/goneo/db/mem"
 	"github.com/gin-gonic/gin"
 	Graphite "github.com/marpaia/graphite-golang"
 	"log"
@@ -145,7 +144,7 @@ func graphvizHandler(c *gin.Context) {
 		}
 
 		// Repackage the table from the query in a new in-memory DB for graphs sake
-		newdb := mem.NewDb()
+		newdb, _ := goneo.OpenDb("mem:temporary")
 
 		nodemapping := make(map[int]goneodb.Node)
 		// Create Nodes

@@ -1,20 +1,31 @@
 package goneo
 
 import (
+	"github.com/BuJo/goneo/db"
 	"strconv"
 	"strings"
 	"testing"
 )
 
+func setupTestDb(t *testing.T) db.DatabaseService {
+	db, err := OpenDb("mem:test")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	return NewUniverseGenerator(db).Generate()
+}
+
 func TestBasicStartQuery(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
+
 	count := len(db.GetAllNodes())
 
 	table, err := Evaluate(db, "start n=node(*) return n as node")
 	NewTableTester(t, table, err).HasColumns("node").HasLen(count)
 }
 func TestUniverse(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	creators := db.FindNodeByProperty("creator", "Joss Whedon")
 	if len(creators) != 1 {
@@ -24,28 +35,28 @@ func TestUniverse(t *testing.T) {
 }
 
 func TestTagged(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (n:Tag)<-[:IS_TAGGED]-(v) return v")
 	NewTableTester(t, table, err).HasLen(6).HasColumns("v")
 }
 
 func TestTwoReturns(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (n:Tag)<-[r:IS_TAGGED]-(v) return v, n")
 	NewTableTester(t, table, err).HasLen(6).HasColumns("v", "n")
 }
 
 func TestPropertyRetMatch(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (n:Person {actor: \"Joss Whedon\"}) return n.actor as actor")
 	NewTableTester(t, table, err).Has("actor", "Joss Whedon")
 }
 
 func TestStartMatch(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	creators := db.FindNodeByProperty("creator", "Joss Whedon")
 
@@ -54,7 +65,7 @@ func TestStartMatch(t *testing.T) {
 }
 
 func TestLongPathMatch(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (e1:Episode)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2:Episode) return e1, e2")
 	if err != nil {
@@ -68,14 +79,14 @@ func TestLongPathMatch(t *testing.T) {
 }
 
 func TestMultiMatch(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (e1)-[:ARCS_TO]->(e2), (e1)<-[:APPEARED_IN]-(niska {character: \"Adelai Niska\"})-[:APPEARED_IN]->(e2) return e1.episode, e2.episode")
 	NewTableTester(t, table, err).Has("e1.episode", "2")
 }
 
 func TestPathVariable(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "start joss=node(0) match path = (joss)-->(o) return path")
 	if err != nil {
@@ -89,14 +100,14 @@ func TestPathVariable(t *testing.T) {
 }
 
 func TestFunctionCount(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (e:Episode)-[:ARCS_TO]->(e2) return count(e) as nrArcs")
 	NewTableTester(t, table, err).Has("nrArcs", 1)
 }
 
 func TestErrorBehaviour(t *testing.T) {
-	db := NewUniverseGenerator().Generate()
+	db := setupTestDb(t)
 
 	table, err := Evaluate(db, "match (e:Episode)-[:ARCS_TO]->(e2) return e.title+e2.title")
 	if err == nil || table != nil {

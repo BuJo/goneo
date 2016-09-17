@@ -17,9 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	. "github.com/BuJo/goneo"
-	. "github.com/BuJo/goneo/db"
-	"github.com/BuJo/goneo/db/mem"
+	"github.com/BuJo/goneo"
 	"github.com/BuJo/goneo/web"
 	"log"
 	"math/rand"
@@ -44,23 +42,20 @@ func main() {
 		return
 	}
 
-	var db DatabaseService
+	db, _ := goneo.OpenDb("mem:testdb")
 
 	if *size == "universe" {
-		db = NewUniverseGenerator().Generate()
+		db = goneo.NewUniverseGenerator(db).Generate()
 	} else if *size == "big" {
 		maxNodes := 5000
 		rand.Seed(42)
 
-		db = mem.NewDb()
 		db.NewNode()
 		for n := db.NewNode(); n.Id() < maxNodes; n = db.NewNode() {
 			t, _ := db.GetNode(rand.Intn(n.Id()))
 			n.RelateTo(t, "HAS")
 		}
 	} else {
-		db = mem.NewDb()
-
 		nodeA := db.NewNode()
 		nodeA.SetProperty("foo", "bar")
 

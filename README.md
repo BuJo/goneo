@@ -17,6 +17,7 @@ This project uses `govendor` to handle dependencies. See the [govendor quickstar
 
 Testing:
 
+	go get github.com/kardianos/govendor
 	govendor sync
 	govendor test +local
 

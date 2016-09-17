@@ -82,12 +82,12 @@ func (state *vf2State) IsFeasablePair(queryNode, targetNode int) bool {
 
 	if fSyn {
 		if len(state.queryPath) > 0 {
-			log.Printf("(%d,%d)~>(%d,%d) are syntactically feasable, sem: ", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
-
 			fSem = state.isSemanticallyFeasable(state, state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode)
+			log.Printf("(%d,%d)~>(%d,%d) are syntactically feasable, sem: %v", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode, fSem)
 		} else {
-			log.Printf("(%d,%d) is syntactically feasable, sem: ", queryNode, targetNode)
+
 			fSem = state.isSemanticallyFeasable(state, NULL_NODE, NULL_NODE, queryNode, targetNode)
+			log.Printf("(%d,%d) is syntactically feasable, sem: %v", queryNode, targetNode, fSem)
 		}
 	}
 

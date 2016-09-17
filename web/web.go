@@ -128,17 +128,21 @@ func nodeRelHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+// BUG(Jo): re-packaging result table into graph misses rel properties
+
 func graphvizHandler(c *gin.Context) {
 	db, _ := c.MustGet("db").(goneodb.DatabaseService)
 
 	gocy := c.PostForm("gocy")
 	if gocy != "" {
+		// Execute query
 		table, err := goneo.Evaluate(db, gocy)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
 			return
 		}
 
+		// Repackage the table from the query in a new in-memory DB for graphs sake
 		newdb := mem.NewDb()
 
 		nodemapping := make(map[int]goneodb.Node)
@@ -147,9 +151,11 @@ func graphvizHandler(c *gin.Context) {
 			for _, col := range table.Columns() {
 				// For each Node element copy the node
 				if node, isnode := table.Get(i, col).(goneodb.Node); isnode {
-					newnode := newdb.NewNode()
+					newnode := newdb.NewNode(node.Labels()...)
 					nodemapping[node.Id()] = newnode
-					// TODO: copy labels/props
+					for k, v := range node.Properties() {
+						newnode.SetProperty(k, v)
+					}
 				}
 			}
 		}
@@ -177,10 +183,6 @@ func graphvizHandler(c *gin.Context) {
 	dot := goneo.DumpDot(db)
 
 	c.String(http.StatusOK, dot)
-}
-
-func testHandler(c *gin.Context) {
-	c.String(http.StatusOK, "<html><head><title>Test gocy</title><script async=\"async\" crossorigin=\"anonymous\" src=\"https://github.com/mdaines/viz.js/releases/download/v1.3.0/viz.js\"></script></head><body></body></html>")
 }
 
 func gocyTableHandler(c *gin.Context) {
@@ -268,8 +270,6 @@ func (s *goneoServer) Start() {
 	s.router.GET("/graphviz", graphvizHandler)
 	s.router.POST("/graphviz", graphvizHandler)
 	s.router.POST("/table", gocyTableHandler)
-	s.router.GET("/", testHandler)
-	s.router.GET("/index.html", testHandler)
 
 	noderouter := datarouter.Group("/node")
 	{

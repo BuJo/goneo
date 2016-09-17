@@ -12,10 +12,19 @@ func DumpDot(db DatabaseService) string {
 
 	for _, n := range db.GetAllNodes() {
 		label := ""
-		if len(n.Labels()) > 0 {
+		if len(n.Properties()) > 0 {
+			// Select a property which is long'ish
+			for _, p := range n.Properties() {
+				if len(p) > 2 {
+					label = p
+					break
+				}
+			}
+		} else if len(n.Labels()) > 0 {
+			// Otherwise try to use a label
 			label = n.Labels()[0]
 		}
-		str += fmt.Sprintf("\tn%d [label=\"%d\\n%s\"]\n", n.Id(), n.Id(), label)
+		str += fmt.Sprintf("\tn%d [label=\"[%d]\\n%s\"]\n", n.Id(), n.Id(), label)
 	}
 	str += "\n\n"
 

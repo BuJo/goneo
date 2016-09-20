@@ -113,11 +113,9 @@ func (gen *universeGenerator) addEpisodes() {
 
 	gen.episodes = []Node{ep01, ep02, ep03, ep04, ep05, ep06, ep07, ep08, ep09, ep10, ep11, ep12, ep13, ep14}
 
-	var e0 Node
-	for _, e1 := range gen.episodes {
-		if e0 != nil {
-			e0.RelateTo(e1, "LEADS_TO")
-		}
+	e0 := gen.episodes[0]
+	for _, e1 := range gen.episodes[1:] {
+		e0.RelateTo(e1, "LEADS_TO")
 		e0 = e1
 	}
 

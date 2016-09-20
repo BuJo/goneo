@@ -25,6 +25,10 @@ func (db *filedb) NewNode(labels ...string) Node {
 	return n
 }
 func (db *filedb) GetNode(id int) (Node, error) {
+	if id > len(db.nodes) || i < 0 {
+		return nil, errors.New("Did not find id")
+	}
+
 	return db.nodes[id], nil
 }
 

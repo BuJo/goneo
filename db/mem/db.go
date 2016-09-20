@@ -14,7 +14,7 @@ type databaseService struct {
 }
 
 // Create a DB instance of a simple memory backed graph DB
-func NewDb() DatabaseService {
+func NewDb(name string, options map[string][]string) DatabaseService {
 	db := new(databaseService)
 
 	db.nodes = make([]Node, 0)

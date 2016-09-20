@@ -4,8 +4,9 @@ import (
 	"testing"
 )
 
-func TestNewDb(t *testing.T) {
+func TestOpeningAndClosingDb(t *testing.T) {
 	db := NewDb("file.db", nil)
+	defer db.Close()
 	if db == nil {
 		t.Fatal("Db should have been created")
 	}

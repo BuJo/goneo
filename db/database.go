@@ -28,10 +28,16 @@ type Relation interface {
 
 type DatabaseService interface {
 	NewNode(labels ...string) Node
+
 	GetNode(id int) (Node, error)
 	GetAllNodes() []Node
+
 	GetRelation(id int) (Relation, error)
 	GetAllRelations() []Relation
+
 	FindPath(start, end Node) Path
+
 	FindNodeByProperty(prop, value string) []Node
+
+	Close()
 }

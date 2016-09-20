@@ -23,6 +23,11 @@ func NewDb(name string, options map[string][]string) DatabaseService {
 	return db
 }
 
+func (db *databaseService) Close() {
+	db.nodes = nil
+	db.relationships = nil
+}
+
 func (db *databaseService) NewNode(labels ...string) Node {
 	n := new(node)
 	n.db = db

@@ -11,6 +11,7 @@ func NewDb(db string, options map[string][]string) DatabaseService {
 }
 
 func (db *filedb) NewNode(labels ...string) Node                { return nil }
+func (db *filedb) Close()                                       {}
 func (db *filedb) GetNode(id int) (Node, error)                 { return nil, nil }
 func (db *filedb) GetAllNodes() []Node                          { return nil }
 func (db *filedb) GetRelation(id int) (Relation, error)         { return nil, nil }

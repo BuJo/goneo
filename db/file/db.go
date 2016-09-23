@@ -1,19 +1,24 @@
 package file
 
 import (
+	"errors"
 	. "github.com/BuJo/goneo/db"
 )
 
 type filedb struct {
+	name    string
+	options map[string][]string
+
 	nodes []*node
 }
 
 func NewDb(name string, options map[string][]string) (DatabaseService, error) {
 	db := new(filedb)
 
-	db.nodes = make([]*node, 0)
+	db.name = name
+	db.options = options
 
-	return db
+	return db, nil
 }
 
 func (db *filedb) NewNode(labels ...string) Node {
@@ -25,7 +30,7 @@ func (db *filedb) NewNode(labels ...string) Node {
 	return n
 }
 func (db *filedb) GetNode(id int) (Node, error) {
-	if id > len(db.nodes) || i < 0 {
+	if db.nodes == nil || id >= len(db.nodes) || id < 0 {
 		return nil, errors.New("Did not find id")
 	}
 

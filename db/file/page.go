@@ -5,6 +5,7 @@ import "C"
 
 import (
 	"errors"
+	"log"
 	"reflect"
 	"syscall"
 	"unsafe"
@@ -45,6 +46,8 @@ func NewPageStore(filename string) (*PageStore, error) {
 }
 
 func (ps *PageStore) NumPages() int {
+	log.Printf("Have %d pages", int((ps.size-HEADER_SIZE)/PAGE_SIZE))
+
 	return int((ps.size - HEADER_SIZE) / PAGE_SIZE)
 }
 
@@ -66,7 +69,7 @@ func (ps *PageStore) GetPage(pgnum int) ([]byte, error) {
 
 func (ps *PageStore) AddPage() (err error) {
 	err = ps.resizeFile(PAGE_SIZE)
-	if err != nil {
+	if err == nil {
 		err = ps.remapFile()
 		if err != nil {
 			ps.resizeFile(-PAGE_SIZE)
@@ -84,6 +87,8 @@ func (ps *PageStore) mapFile() error {
 
 	ps.backing = addr
 
+	log.Printf("Mapped 0x%08x length %d", ps.backing, ps.size)
+
 	return nil
 }
 
@@ -96,6 +101,8 @@ func (ps *PageStore) remapFile() error {
 	if ps.backing != addr {
 		return errors.New("Can not change addr")
 	}
+
+	log.Printf("Remapped 0x%08x to length %d", ps.backing, ps.size)
 
 	return nil
 }
@@ -119,6 +126,8 @@ func (ps *PageStore) openFile(filename string) error {
 }
 
 func (ps *PageStore) resizeFile(size int64) error {
+	log.Printf("resizing paged file(0x%08x) from %d to %d", ps.backing, ps.size, ps.size+size)
+
 	fterr := syscall.Ftruncate(ps.fd, ps.size+size)
 	if fterr != nil {
 		return fterr

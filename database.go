@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-type newdb func(db string, options map[string][]string) DatabaseService
+type newdb func(db string, options map[string][]string) (DatabaseService, error)
 
 var dbRegistrty map[string]newdb = map[string]newdb{
 	"mem": mem.NewDb,
@@ -31,5 +31,5 @@ func OpenDb(dbUri string) (DatabaseService, error) {
 		return nil, errors.New("Did not find DB type for " + dbType)
 	}
 
-	return dbfunc(dbInfo, dbOpts), nil
+	return dbfunc(dbInfo, dbOpts)
 }

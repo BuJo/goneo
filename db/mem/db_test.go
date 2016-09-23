@@ -9,7 +9,7 @@ import (
 
 func ExampleNewDb() {
 
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeA.SetProperty("foo", "bar")
@@ -41,7 +41,7 @@ func ExampleNewDb() {
 }
 
 func TestDbCreation(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	if nodes := db.GetAllNodes(); len(nodes) != 0 {
 		t.Fatal("DB should be empty")
@@ -49,7 +49,7 @@ func TestDbCreation(t *testing.T) {
 }
 
 func TestNodeCreation(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	db.NewNode()
 	db.NewNode()
@@ -68,7 +68,7 @@ func TestNodeCreation(t *testing.T) {
 }
 
 func TestRelationCreation(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -89,7 +89,7 @@ func TestRelationCreation(t *testing.T) {
 }
 
 func TestRelationRetrieval(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -105,7 +105,7 @@ func TestRelationRetrieval(t *testing.T) {
 }
 
 func TestFailingRelationRetrieval(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -117,7 +117,7 @@ func TestFailingRelationRetrieval(t *testing.T) {
 }
 
 func TestNoNode(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	newNode := db.NewNode()
 
@@ -127,7 +127,7 @@ func TestNoNode(t *testing.T) {
 }
 
 func TestPathFinding(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -147,7 +147,7 @@ func TestPathFinding(t *testing.T) {
 }
 
 func TestFailedPathFinding(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -164,7 +164,7 @@ func TestFailedPathFinding(t *testing.T) {
 }
 
 func TestNodeProperties(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	node := db.NewNode()
 	node.SetProperty("foo", "bar")
@@ -181,7 +181,7 @@ func TestNodeProperties(t *testing.T) {
 }
 
 func TestNodeLabels(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	node := db.NewNode("Human")
 
@@ -199,7 +199,7 @@ func TestNodeLabels(t *testing.T) {
 }
 
 func TestNodeRelating(t *testing.T) {
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeB := db.NewNode()
@@ -261,7 +261,7 @@ func TestPanicOnMixingDBImplementations(t *testing.T) {
 		}
 	}()
 
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	nodeA := db.NewNode()
 	nodeA.RelateTo(&mocknode{}, "HAS")
@@ -269,7 +269,7 @@ func TestPanicOnMixingDBImplementations(t *testing.T) {
 
 func BenchmarkCreateNode(b *testing.B) {
 
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	b.ResetTimer()
 
@@ -287,7 +287,7 @@ func createRandomDb(maxNodes int) DatabaseService {
 
 	rand.Seed(42)
 
-	db := NewDb("test", nil)
+	db, _ := NewDb("test", nil)
 
 	db.NewNode()
 

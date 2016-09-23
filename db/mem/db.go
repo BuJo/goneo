@@ -14,13 +14,13 @@ type databaseService struct {
 }
 
 // Create a DB instance of a simple memory backed graph DB
-func NewDb(name string, options map[string][]string) DatabaseService {
+func NewDb(name string, options map[string][]string) (DatabaseService, error) {
 	db := new(databaseService)
 
 	db.nodes = make([]Node, 0)
 	db.relationships = make([]Relation, 0)
 
-	return db
+	return db, nil
 }
 
 func (db *databaseService) Close() {

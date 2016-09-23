@@ -5,7 +5,7 @@ import (
 )
 
 func TestOpeningAndClosingDb(t *testing.T) {
-	db := NewDb("file.db", nil)
+	db, _ := NewDb("file.db", nil)
 	defer db.Close()
 	if db == nil {
 		t.Fatal("Db should have been created")
@@ -13,7 +13,7 @@ func TestOpeningAndClosingDb(t *testing.T) {
 }
 
 func TestSavingAndGettingNodes(t *testing.T) {
-	db := NewDb("file.db", nil)
+	db, _ := NewDb("file.db", nil)
 	defer db.Close()
 
 	node := db.NewNode()
@@ -28,7 +28,7 @@ func TestSavingAndGettingNodes(t *testing.T) {
 }
 
 func TestGettingInvalidNode(t *testing.T) {
-	db := NewDb("file.db", nil)
+	db, _ := NewDb("file.db", nil)
 	defer db.Close()
 
 	node, err := db.GetNode(77)
@@ -41,7 +41,7 @@ func TestGettingInvalidNode(t *testing.T) {
 }
 
 func TestGettingNodesAfterReOpenDb(t *testing.T) {
-	db := NewDb("file.db", nil)
+	db, _ := NewDb("file.db", nil)
 	db.Close()
 
 	node := db.NewNode()
@@ -52,11 +52,11 @@ func TestGettingNodesAfterReOpenDb(t *testing.T) {
 	id := node.Id()
 
 	db.Close()
-	db = NewDb("file.db", nil)
+	db, _ = NewDb("file.db", nil)
 	defer db.Close()
 
 	node, _ = db.GetNode(id)
 	if node == nil {
-		t.Fatal("Node getting should work")
+		t.Fatal("Getting node after re-opening the database should work")
 	}
 }

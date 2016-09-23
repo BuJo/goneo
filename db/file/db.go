@@ -8,8 +8,8 @@ type filedb struct {
 	nodes []*node
 }
 
-func NewDb(name string, options map[string][]string) DatabaseService {
-	db := &filedb{}
+func NewDb(name string, options map[string][]string) (DatabaseService, error) {
+	db := new(filedb)
 
 	db.nodes = make([]*node, 0)
 

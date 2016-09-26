@@ -12,6 +12,10 @@ func TestOpeningAndClosingDb(t *testing.T) {
 	}
 	defer db.Close()
 	defer os.Remove("file.db")
+
+	if nodes := db.GetAllNodes(); len(nodes) != 0 {
+		t.Fatal("DB should be empty")
+	}
 }
 
 func TestSavingAndGettingNodes(t *testing.T) {
@@ -35,6 +39,10 @@ func TestSavingAndGettingNodes(t *testing.T) {
 	_, err := db.GetNode(node.Id())
 	if err != nil {
 		t.Fatalf("Getting node %d should work", node.Id())
+	}
+
+	if nodes := db.GetAllNodes(); len(nodes) == 0 {
+		t.Fatal("DB should not be empty")
 	}
 }
 

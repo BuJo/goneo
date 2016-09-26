@@ -108,7 +108,7 @@ func (db *filedb) writeNodesPageRec(space []byte, idlist []uint64) error {
 			newpage, _ := db.pagestore.GetFreePage()
 			newspace, _ := db.pagestore.GetPage(newpage)
 			binary.LittleEndian.PutUint64(space[0:], uint64(entrynr-1))
-			log.Printf("Continue writing nodes to page: %d, entries left: %d", newpage)
+			log.Printf("Continue writing nodes to page: %d, entries left: %d", newpage, len(idlist[entrynr:]))
 
 			return db.writeNodesPageRec(newspace, idlist[entrynr:])
 		}
@@ -256,7 +256,16 @@ func (db *filedb) GetNode(id int) (Node, error) {
 	return n, nil
 }
 
-func (db *filedb) GetAllNodes() []Node                          { return nil }
+func (db *filedb) GetAllNodes() []Node {
+	nodes := make([]Node, 0, len(db.idmap))
+	for id, _ := range db.idmap {
+		if node, err := db.GetNode(int(id)); err == nil {
+			nodes = append(nodes, node)
+		}
+	}
+	return nodes
+}
+
 func (db *filedb) GetRelation(id int) (Relation, error)         { return nil, nil }
 func (db *filedb) GetAllRelations() []Relation                  { return nil }
 func (db *filedb) FindPath(start, end Node) Path                { return nil }

@@ -14,13 +14,14 @@ type nodeentry struct {
 	rts, wts        uint64
 	prev            *nodeentry
 }
+type nodeentrymap map[uint64]*nodeentry
 type filedb struct {
 	name    string
 	options map[string][]string
 
 	pagestore *PageStore
 
-	idmap map[uint64]*nodeentry
+	idmap nodeentrymap
 
 	wrmutex  sync.Mutex
 	nextfree struct{ pagenum, offset int }
@@ -79,25 +80,51 @@ func (db *filedb) saveNodes() error {
 
 	log.Printf("Saving %d nodes, nfree: %v", len(db.idmap), db.nextfree)
 
-	i := 0
 	// next free
-	binary.LittleEndian.PutUint64(idpage[i:], uint64(db.nextfree.pagenum))
-	i += 8
-	binary.LittleEndian.PutUint64(idpage[i:], uint64(db.nextfree.offset))
+	binary.LittleEndian.PutUint64(idpage[0:], uint64(db.nextfree.pagenum))
+	binary.LittleEndian.PutUint64(idpage[8:], uint64(db.nextfree.offset))
+
+	idlist := make([]uint64, 0, len(db.idmap))
+	for id, _ := range db.idmap {
+		idlist = append(idlist, id)
+	}
+	log.Printf("Writing nodes to page: %d, entries left: %d, space left: %d", 0, len(idlist), len(idpage[16:]))
+	db.writeNodesPageRec(idpage[16:], idlist)
+
+	return nil
+}
+
+func (db *filedb) writeNodesPageRec(space []byte, idlist []uint64) error {
+	i := 0
+	// next idpage
+	binary.LittleEndian.PutUint64(space[0:], 0)
 	i += 8
 
 	// node entries
-	binary.LittleEndian.PutUint64(idpage[i:], uint64(len(db.idmap)))
+	binary.LittleEndian.PutUint64(space[8:], uint64(len(idlist)))
 	i += 8
-	for _, entry := range db.idmap {
-		binary.LittleEndian.PutUint64(idpage[i:], uint64(entry.pagenum))
+	for entrynr, id := range idlist {
+		if len(space[i:]) < 16 {
+			newpage, _ := db.pagestore.GetFreePage()
+			newspace, _ := db.pagestore.GetPage(newpage)
+			binary.LittleEndian.PutUint64(space[0:], uint64(entrynr-1))
+			log.Printf("Continue writing nodes to page: %d, entries left: %d", newpage)
+
+			return db.writeNodesPageRec(newspace, idlist[entrynr:])
+		}
+
+		entry := db.idmap[id]
+		log.Printf("Persising node(%d) at: %d", id, i)
+		binary.LittleEndian.PutUint64(space[i:], uint64(entry.pagenum))
 		i += 8
-		binary.LittleEndian.PutUint64(idpage[i:], uint64(entry.offset))
+		binary.LittleEndian.PutUint64(space[i:], uint64(entry.offset))
 		i += 8
+
 	}
 
 	return nil
 }
+
 func (db *filedb) loadNodes() error {
 	idpage, err := db.getIdPage()
 	if err != nil {
@@ -107,32 +134,44 @@ func (db *filedb) loadNodes() error {
 	db.wrmutex.Lock()
 	defer db.wrmutex.Unlock()
 
-	i := 0
 	// next free
-	db.nextfree.pagenum = int(binary.LittleEndian.Uint64(idpage[i:]))
-	i += 8
-	db.nextfree.offset = int(binary.LittleEndian.Uint64(idpage[i:]))
+	db.nextfree.pagenum = int(binary.LittleEndian.Uint64(idpage[0:]))
+	db.nextfree.offset = int(binary.LittleEndian.Uint64(idpage[8:]))
+	db.idmap = make(nodeentrymap)
+	db.loadNodesPageRec(idpage[16:])
+
+	log.Printf("Loaded %d nodes, nextfree:%v", len(db.idmap), db.nextfree)
+
+	return nil
+}
+
+func (db *filedb) loadNodesPageRec(space []byte) error {
+	i := 0
+	// next idpage
+	nextpage := int(binary.LittleEndian.Uint64(space[i:]))
 	i += 8
 
 	// node entries
-	nrentries := binary.LittleEndian.Uint64(idpage[i:])
-	db.idmap = make(map[uint64]*nodeentry, nrentries)
+	nrentries := binary.LittleEndian.Uint64(space[i:])
+
 	i += 8
 	for id := uint64(0); id < nrentries; id++ {
 		entry := new(nodeentry)
 
-		entry.pagenum = int(binary.LittleEndian.Uint64(idpage[i:]))
+		entry.pagenum = int(binary.LittleEndian.Uint64(space[i:]))
 		i += 8
-		entry.offset = int(binary.LittleEndian.Uint64(idpage[i:]))
+		entry.offset = int(binary.LittleEndian.Uint64(space[i:]))
 		i += 8
 
 		db.idmap[id] = entry
 	}
-
-	log.Printf("Loaded %d nodes, nextfree:%v", nrentries, db.nextfree)
-
+	if nextpage > 0 {
+		newspace, _ := db.pagestore.GetPage(nextpage)
+		return db.loadNodesPageRec(newspace)
+	}
 	return nil
 }
+
 func (db *filedb) getIdPage() ([]byte, error) {
 
 	idpage, err := db.pagestore.GetPage(0)

@@ -4,6 +4,7 @@ package file
 import "C"
 
 import (
+	"encoding/binary"
 	"errors"
 	"log"
 	"reflect"
@@ -13,13 +14,15 @@ import (
 
 const (
 	HEADER_SIZE = 512
-	PAGE_SIZE   = 4096
+	PAGE_SIZE   = 128
 )
 
 type PageStore struct {
 	size    int64
 	fd      int
 	backing uintptr
+
+	freepage int
 }
 
 func NewPageStore(filename string) (*PageStore, error) {
@@ -51,6 +54,32 @@ func (ps *PageStore) NumPages() int {
 	return int((ps.size - HEADER_SIZE) / PAGE_SIZE)
 }
 
+func (ps *PageStore) GetFreePage() (int, error) {
+	if !ps.haveFreePage() {
+		ps.AddPage()
+	}
+	return ps.getNextFreePage()
+}
+
+func (ps *PageStore) haveFreePage() bool {
+	return ps.freepage > 0
+}
+
+func (ps *PageStore) getNextFreePage() (int, error) {
+	if ps.haveFreePage() {
+		freepage := ps.freepage
+		p, err := ps.GetPage(freepage)
+		if err != nil {
+			return -1, err
+		}
+
+		ps.freepage = int(binary.LittleEndian.Uint64(p))
+
+		return freepage, nil
+	}
+	return -1, nil
+}
+
 func (ps *PageStore) GetPage(pgnum int) ([]byte, error) {
 	if pgnum < 0 {
 		return nil, errors.New("page number must be greater than zero")
@@ -74,6 +103,13 @@ func (ps *PageStore) AddPage() (err error) {
 		if err != nil {
 			ps.resizeFile(-PAGE_SIZE)
 		}
+
+		var page []byte
+		var freepage int = ps.NumPages() - 1
+
+		page, err = ps.GetPage(freepage)
+		binary.LittleEndian.PutUint64(page, uint64(ps.freepage))
+		ps.freepage = freepage
 	}
 	return err
 }

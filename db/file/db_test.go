@@ -1,6 +1,7 @@
 package file
 
 import (
+	. "github.com/BuJo/goneo/db"
 	"os"
 	"testing"
 )
@@ -76,5 +77,28 @@ func TestGettingNodesAfterReOpenDb(t *testing.T) {
 	node, _ = db.GetNode(0)
 	if node == nil {
 		t.Fatal("Getting node after re-opening the database should work")
+	}
+}
+
+func TestRelationCreation(t *testing.T) {
+	db, _ := NewDb("file.db", nil)
+	defer os.Remove("file.db")
+
+	nodeA := db.NewNode()
+	nodeB := db.NewNode()
+	rel := nodeA.RelateTo(nodeB, "HAS")
+
+	if rel.Id() < 0 {
+		t.Error("Relationship should have ok id")
+	}
+
+	db.Close()
+	db, _ = NewDb("file.db", nil)
+	defer db.Close()
+
+	node, _ := db.GetNode(0)
+	rels := node.Relations(Both)
+	if len(rels) != 1 {
+		t.Error("There should be one relationship")
 	}
 }

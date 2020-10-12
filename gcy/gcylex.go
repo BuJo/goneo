@@ -165,7 +165,7 @@ func (l *lexer) backup() {
 
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
 	//log.Printf("error at: %d(%s)\n", l.pos, l.input[l.pos:])
-	l.items <- item{itemError, fmt.Sprintf(format, args)}
+	l.items <- item{itemError, fmt.Sprintf(format, args...)}
 	return nil
 }
 

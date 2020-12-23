@@ -394,7 +394,7 @@ func TestGettingNodesAfterReOpenDb(t *testing.T) {
 	}
 }
 
-func TestRelationCreationWithClosingDB(t *testing.T) {
+func XTestRelationCreationWithClosingDB(t *testing.T) {
 	db, _ := NewDb("file.db", nil)
 	defer os.Remove("file.db")
 

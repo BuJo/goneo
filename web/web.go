@@ -2,6 +2,7 @@
 package web
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -23,13 +24,13 @@ type (
 
 	// JSON representation of a node
 	NodeResponse struct {
-		Self                   string
-		Property               string
-		Properties             string
-		Data                   map[string]string
-		Labels                 string
-		Outgoing_Relationships string
-		Incoming_Relationships string
+		Self                  string
+		Property              string
+		Properties            string
+		Data                  map[string]string
+		Labels                string
+		OutgoingRelationships string `json:"Outgoing_Relationships"`
+		IncomingRelationships string `json:"Incoming_Relationships"`
 	}
 	// JSON representation of a relationship
 	RelationshipResponse struct {
@@ -45,7 +46,7 @@ type (
 	ErrorResponse struct {
 		Message    string
 		Exception  string
-		Fullname   string
+		FullName   string `json:"Fullname"`
 		Stacktrace []string
 	}
 )
@@ -90,7 +91,7 @@ func nodeHandler(c *gin.Context) {
 
 	res := NodeResponse{}
 	res.Self = "/db/data/node/" + c.Param("id")
-	res.Outgoing_Relationships = "/db/data/node/" + c.Param("id") + "/direction/out"
+	res.OutgoingRelationships = "/db/data/node/" + c.Param("id") + "/direction/out"
 
 	res.Data = node.Properties()
 
@@ -237,5 +238,7 @@ func (s *goneoServer) Start() {
 		relrouter.GET("/:id", relationshipHandler)
 	}
 
-	s.router.Run(s.binding)
+	if err := s.router.Run(s.binding); err != nil {
+		log.Fatal(err)
+	}
 }

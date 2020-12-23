@@ -60,10 +60,5 @@ func main() {
 
 	server.Bind(*binding)
 
-	if apikey := os.Getenv("HOSTEDGRAPHITE_APIKEY"); apikey != "" {
-		host, port := "carbon.hostedgraphite.com", 2003
-		server.EnableGraphite(host, port, apikey)
-	}
-
 	server.Start()
 }

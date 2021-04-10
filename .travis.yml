@@ -1,12 +1,9 @@
 language: go
 go:
-  - 1.7
+  - 1.16
   - tip
 sudo: false
 install:
-  - go get github.com/kardianos/govendor
-  - govendor sync
-  - govendor list
+  - go build ./...
 script:
-  - govendor vet +local
-  - govendor test +local
+  - go test ./...

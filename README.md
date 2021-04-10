@@ -13,13 +13,31 @@ This software contains:
 
 [![Build Status](https://travis-ci.org/BuJo/goneo.svg?branch=master)](https://travis-ci.org/BuJo/goneo)
 
-This project uses `govendor` to handle dependencies. See the [govendor quickstart][govquick] for more information.
+This project uses go modules to handle dependencies.
 
 Testing:
 
-	go get github.com/kardianos/govendor
-	govendor sync
-	govendor test +local
+	go test ./...
+
+Building:
+
+```
+go build github.com/BuJo/goneo/cmd/goneo
+```
+
+Running the program with a few generated nodes in the in-memory-db:
+
+```
+./goneo -size universe
+```
+
+Running cypher to search for some labelled nodes:
+
+```
+curl -F 'gocy=match (t:Tag) RETURN t.tag AS tag' localhost:7474/table
+```
+
+The web interface can also render out the db as graphviz format via `/graphviz` (which also understands form field gocy with a search query).
 
 #### Release
 
@@ -41,5 +59,3 @@ Testing:
 * Gati, G. (1979). Further annotated bibliography on the isomorphism disease. Journal of Graph Theory 3, 95–109.
 * An Algorithm for Subgraph Isomorphism
   J. R. ULLMANN
-
-[govquick]: https://github.com/kardianos/govendor#quick-start-also-see-the-faq

@@ -3,10 +3,11 @@ package file
 import (
 	"encoding/binary"
 	"errors"
-	. "github.com/BuJo/goneo/db"
-	"log"
 	"sync"
 	"sync/atomic"
+
+	. "github.com/BuJo/goneo/db"
+	"github.com/BuJo/goneo/log"
 )
 
 type nodeentry struct {
@@ -85,7 +86,7 @@ func (db *filedb) saveNodes() error {
 	binary.LittleEndian.PutUint64(idpage[8:], uint64(db.nextfree.offset))
 
 	idlist := make([]uint64, 0, len(db.idmap))
-	for id, _ := range db.idmap {
+	for id := range db.idmap {
 		idlist = append(idlist, id)
 	}
 
@@ -268,7 +269,7 @@ func (db *filedb) GetNode(id int) (Node, error) {
 
 func (db *filedb) GetAllNodes() []Node {
 	nodes := make([]Node, 0, len(db.idmap))
-	for id, _ := range db.idmap {
+	for id := range db.idmap {
 		if node, err := db.GetNode(int(id)); err == nil {
 			nodes = append(nodes, node)
 		}
@@ -283,12 +284,12 @@ func (db *filedb) createEdge(a, b *node) (*edge, error) {
 	db.wrmutex.Lock()
 	defer db.wrmutex.Unlock()
 
-    // TODO: complete saving
-//	wts := atomic.AddUint64(&db.tid, 1)
-//	id := atomic.AddUint64(&db.nextid, 1)
-//
-//	pagenum, offset := db.nextfree.pagenum, db.nextfree.offset
-//
+	// TODO: complete saving
+	//	wts := atomic.AddUint64(&db.tid, 1)
+	//	id := atomic.AddUint64(&db.nextid, 1)
+	//
+	//	pagenum, offset := db.nextfree.pagenum, db.nextfree.offset
+	//
 	edge := &edge{db, 0, "", a, b}
 	a.edges = append(a.edges, edge)
 	b.edges = append(b.edges, edge)

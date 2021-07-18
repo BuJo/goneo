@@ -1,3 +1,5 @@
+// +build linux darwin
+
 package file
 
 // #include <unistd.h>
@@ -6,10 +8,11 @@ import "C"
 import (
 	"encoding/binary"
 	"errors"
-	"log"
 	"reflect"
 	"syscall"
 	"unsafe"
+
+	"github.com/BuJo/goneo/log"
 )
 
 const (

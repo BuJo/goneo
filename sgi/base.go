@@ -2,11 +2,12 @@
 package sgi
 
 import (
-	"log"
 	"reflect"
+
+	"github.com/BuJo/goneo/log"
 )
 
-var NULL_NODE int = -1
+var NULL_NODE = -1
 
 type Graph interface {
 	Order() int

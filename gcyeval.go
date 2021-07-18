@@ -2,10 +2,11 @@ package goneo
 
 import (
 	"errors"
+
 	. "github.com/BuJo/goneo/db"
 	"github.com/BuJo/goneo/gcy"
+	"github.com/BuJo/goneo/log"
 	"github.com/BuJo/goneo/sgi"
-	"log"
 )
 
 type (
@@ -289,7 +290,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 
 	// query relation
 	var qRel Relation
-	var qDir Direction = Both
+	var qDir = Both
 	for _, rel := range q1.Relations(Both) {
 		if rel.Start().Id() == q1.Id() && rel.End().Id() == q2.Id() {
 			qRel, qDir = rel, Outgoing
@@ -300,7 +301,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 
 	// target relation
 	var tRel Relation
-	var tDir Direction = Both
+	var tDir = Both
 	for _, rel := range t1.Relations(Both) {
 		if rel.Start().Id() == t1.Id() && rel.End().Id() == t2.Id() {
 			tRel, tDir = rel, Outgoing

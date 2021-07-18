@@ -3,10 +3,11 @@ package simplefile
 
 import (
 	"encoding/binary"
+	"os"
+
 	. "github.com/BuJo/goneo/db"
 	"github.com/BuJo/goneo/db/mem"
-	"log"
-	"os"
+	"github.com/BuJo/goneo/log"
 )
 
 type databaseService struct {

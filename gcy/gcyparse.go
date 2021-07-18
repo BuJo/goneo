@@ -3,8 +3,9 @@ package gcy
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
+
+	"github.com/BuJo/goneo/log"
 )
 
 type (

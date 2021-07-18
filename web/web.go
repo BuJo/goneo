@@ -2,12 +2,12 @@
 package web
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/BuJo/goneo"
 	goneodb "github.com/BuJo/goneo/db"
+	"github.com/BuJo/goneo/log"
 	"github.com/gin-gonic/gin"
 )
 

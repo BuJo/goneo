@@ -20,7 +20,6 @@ import (
 	"github.com/BuJo/goneo"
 	"github.com/BuJo/goneo/data"
 	"github.com/BuJo/goneo/web"
-	"log"
 	"os"
 )
 
@@ -29,13 +28,11 @@ var (
 	size    = flag.String("size", "small", "Size of generated graph")
 	version = flag.Bool("version", false, "Print version information")
 
-	buildversion, buildtime string = "SNAPSHOT", ""
+	buildversion, buildtime = "SNAPSHOT", ""
 )
 
 func main() {
 	flag.Parse()
-
-	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
 
 	if *version {
 		fmt.Println("goneo version", buildversion, "(", buildtime, ")")

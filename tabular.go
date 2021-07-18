@@ -3,8 +3,9 @@ package goneo
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"text/tabwriter"
+
+	"github.com/BuJo/goneo/log"
 )
 
 // Describes information in a tabular format.
@@ -25,7 +26,7 @@ func (t *TabularData) String() string {
 
 	headers := make([]string, 0)
 
-	for header, _ := range t.line[0] {
+	for header := range t.line[0] {
 		headers = append(headers, header)
 	}
 
@@ -55,7 +56,7 @@ func (t *TabularData) Len() int {
 // Return column names
 func (t *TabularData) Columns() []string {
 	cols := make([]string, 0)
-	for k, _ := range t.line[0] {
+	for k := range t.line[0] {
 		cols = append(cols, k)
 	}
 	return cols

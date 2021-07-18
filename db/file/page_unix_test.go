@@ -1,7 +1,9 @@
+// +build linux darwin
+
 package file
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -55,10 +57,10 @@ func TestWritingPages(t *testing.T) {
 		if perr != nil {
 			t.Fatal("Should be able to get added page")
 		}
-		log.Printf("page %d(%d->%d) len:%d, cap:%d, pagesize:%d", i, HEADER_SIZE+PAGE_SIZE*i, HEADER_SIZE+PAGE_SIZE*i+PAGE_SIZE, len(page), cap(page), PAGE_SIZE)
+		fmt.Printf("page %d(%d->%d) len:%d, cap:%d, pagesize:%d", i, HEADER_SIZE+PAGE_SIZE*i, HEADER_SIZE+PAGE_SIZE*i+PAGE_SIZE, len(page), cap(page), PAGE_SIZE)
 
 		for chunknr := 0; chunknr*128 < PAGE_SIZE-50; chunknr++ {
-			log.Printf("page %d offset:%d len:%d, cap:%d, pagesize:%d", i, chunknr*128, len(page[chunknr*128:]), cap(page[chunknr*128:]), PAGE_SIZE)
+			fmt.Printf("page %d offset:%d len:%d, cap:%d, pagesize:%d", i, chunknr*128, len(page[chunknr*128:]), cap(page[chunknr*128:]), PAGE_SIZE)
 			copy(page[chunknr*128:], "||>"+string([]byte{byte(39 + (chunknr % 51))})+"<||")
 		}
 	}

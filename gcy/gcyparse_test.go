@@ -1,7 +1,7 @@
 package gcy
 
 import (
-	"log"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -41,7 +41,7 @@ func TestInvalidOperator(t *testing.T) {
 
 	found := false
 	for _, e := range errors {
-		log.Printf("[invop] " + e.Error())
+		fmt.Printf("[invop] " + e.Error())
 		if strings.Contains(e.Error(), "+") {
 			found = true
 		}
@@ -64,7 +64,7 @@ func TestInvalidSquishedOpInRet(t *testing.T) {
 
 	found := false
 	for _, e := range errors {
-		log.Printf("[invop2] " + e.Error())
+		fmt.Printf("[invop2] " + e.Error())
 		if strings.Contains(e.Error(), "bad character") {
 			found = true
 		}

@@ -376,7 +376,10 @@ func TestGettingInvalidNode(t *testing.T) {
 }
 
 func TestGettingNodesAfterReOpenDb(t *testing.T) {
-	db, _ := NewDb("file.db", nil)
+	db, err := NewDb("file.db", nil)
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
 	defer os.Remove("file.db")
 
 	node := db.NewNode()
@@ -385,12 +388,15 @@ func TestGettingNodesAfterReOpenDb(t *testing.T) {
 	}
 
 	db.Close()
-	db, _ = NewDb("file.db", nil)
+	db, err = NewDb("file.db", nil)
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
 	defer db.Close()
 
-	node, _ = db.GetNode(0)
+	node, err = db.GetNode(0)
 	if node == nil {
-		t.Fatal("Getting node after re-opening the database should work")
+		t.Fatal("Getting node after re-opening the database should work", err)
 	}
 }
 

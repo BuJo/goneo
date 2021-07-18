@@ -2,7 +2,8 @@ package sgi
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/BuJo/goneo/log"
 )
 
 type vf2State struct {

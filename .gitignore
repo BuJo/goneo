@@ -2,4 +2,5 @@
 Godeps/*
 sgi/mx/*
 doc/*.pdf
-vendor/*/
+vendor/
+goneo

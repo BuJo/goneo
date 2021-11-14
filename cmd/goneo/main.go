@@ -17,10 +17,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/BuJo/goneo"
 	"github.com/BuJo/goneo/data"
 	"github.com/BuJo/goneo/web"
-	"os"
 )
 
 var (
@@ -28,14 +29,14 @@ var (
 	size    = flag.String("size", "small", "Size of generated graph")
 	version = flag.Bool("version", false, "Print version information")
 
-	buildversion, buildtime = "SNAPSHOT", ""
+	buildversion = "SNAPSHOT"
 )
 
 func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("goneo version", buildversion, "(", buildtime, ")")
+		fmt.Println("Version:", buildversion)
 		return
 	}
 

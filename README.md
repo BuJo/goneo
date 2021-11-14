@@ -43,7 +43,7 @@ The web interface can also render out the db as graphviz format via `/graphviz` 
 
 	govendor sync
 	VERSION=v1.0
-	go install -ldflags "-X main.buildversion=$VERSION -X main.buildtime=$(date +%FT%X%z)"
+	go install -ldflags "-X main.buildversion=$VERSION"
 
 ### Literature
 

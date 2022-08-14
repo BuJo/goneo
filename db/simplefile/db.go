@@ -1,4 +1,4 @@
-// Simple file backed DatabaseService.
+// Package simplefile for a simple file backed DatabaseService.
 package simplefile
 
 import (
@@ -15,8 +15,8 @@ type databaseService struct {
 	filename string
 }
 
-// Create a DB instance of a simple file backed graph DB
-func NewDb(name string, options map[string][]string) (DatabaseService, error) {
+// NewDb creates a DB instance of a simple file backed graph DB
+func NewDb(name string, options map[string][]string) (service *databaseService, err error) {
 	db, err := mem.NewDb(name, options)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func NewDb(name string, options map[string][]string) (DatabaseService, error) {
 	filename := name
 
 	log.Printf("trying to load from file: %s", filename)
-	if _, err := os.Stat(filename); err == nil {
+	if _, err = os.Stat(filename); err == nil {
 		err = loadDbFile(db, filename)
 	}
 
@@ -49,7 +49,7 @@ func (db *databaseService) Close() {
 	log.Print("Saving to " + db.filename + ".tmp")
 	err := saveDbFile(db.filename+".tmp", db.mem)
 	if err == nil {
-		moveDbFile(db.filename, db.filename+".tmp")
+		_ = moveDbFile(db.filename, db.filename+".tmp")
 	}
 
 	db.mem.Close()
@@ -65,15 +65,17 @@ func saveDbFile(tempfile string, db DatabaseService) (err error) {
 
 	log.Printf("Writing %d nodes", len(db.GetAllNodes()))
 
-	buf := make([]byte, 4, 4)
+	buf := make([]byte, 4)
 	for _, n := range db.GetAllNodes() {
 		binary.LittleEndian.PutUint32(buf, uint32(n.Id()))
-		file.Write(buf)
+		_, err = file.Write(buf)
+		if err != nil {
+			_ = file.Close()
+			return err
+		}
 	}
 
-	err = file.Close()
-
-	return err
+	return file.Close()
 }
 
 func moveDbFile(filename, tempfile string) error {
@@ -88,7 +90,7 @@ func loadDbFile(db DatabaseService, filename string) (err error) {
 		return err
 	}
 	log.Print("Loading db from file")
-	buf := make([]byte, 4, 4)
+	buf := make([]byte, 4)
 	i := 0
 	for n, e := file.Read(buf); e == nil && i < 50; i++ {
 		id := binary.LittleEndian.Uint32(buf)

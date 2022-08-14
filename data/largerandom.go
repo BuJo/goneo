@@ -1,26 +1,27 @@
 package data
 
 import (
-	. "github.com/BuJo/goneo/db"
 	"math/rand"
+
+	. "github.com/BuJo/goneo/db"
 )
 
-type randgenerator struct{ DatabaseService }
+type random struct{ DatabaseService }
 
-func NewLargeRandomGenerator(db DatabaseService) DatabaseGenerator {
+func NewLargeRandomGenerator(db DatabaseService) *random {
 
-	return randgenerator{db}
+	return &random{db}
 }
 
-func (db randgenerator) Generate() DatabaseService {
+func (gen *random) Generate() DatabaseService {
 	maxNodes := 5000
 	rand.Seed(42)
 
-	db.NewNode()
-	for n := db.NewNode(); n.Id() < maxNodes; n = db.NewNode() {
-		t, _ := db.GetNode(rand.Intn(n.Id()))
+	gen.NewNode()
+	for n := gen.NewNode(); n.Id() < maxNodes; n = gen.NewNode() {
+		t, _ := gen.GetNode(rand.Intn(n.Id()))
 		n.RelateTo(t, "HAS")
 	}
 
-	return db
+	return gen
 }

@@ -2,8 +2,9 @@ package mem
 
 import (
 	"fmt"
-	. "github.com/BuJo/goneo/db"
 	"sort"
+
+	. "github.com/BuJo/goneo/db"
 )
 
 type node struct {
@@ -15,9 +16,9 @@ type node struct {
 	properties map[string]string
 }
 
-func (node *node) String() string {
+func (n *node) String() string {
 	props := " {"
-	for key, val := range node.properties {
+	for key, val := range n.properties {
 		props += key + ":\"" + val + "\","
 	}
 	props += "}"
@@ -26,35 +27,35 @@ func (node *node) String() string {
 	}
 
 	labels := ""
-	for _, l := range node.labels {
+	for _, l := range n.labels {
 		labels += ":" + l
 	}
 
-	return fmt.Sprintf("(%d%s%s)", node.id, labels, props)
+	return fmt.Sprintf("(%d%s%s)", n.id, labels, props)
 }
 
-func (node *node) Property(prop string) interface{} {
-	return node.properties[prop]
+func (n *node) Property(prop string) interface{} {
+	return n.properties[prop]
 }
-func (node *node) SetProperty(name, val string) {
-	if node.properties == nil {
-		node.properties = make(map[string]string)
+func (n *node) SetProperty(name, val string) {
+	if n.properties == nil {
+		n.properties = make(map[string]string)
 	}
-	node.properties[name] = val
+	n.properties[name] = val
 }
-func (node *node) Properties() map[string]string {
-	return node.properties
+func (n *node) Properties() map[string]string {
+	return n.properties
 }
 
-func (node *node) HasProperty(prop string) bool {
-	_, ok := node.properties[prop]
+func (n *node) HasProperty(prop string) bool {
+	_, ok := n.properties[prop]
 	return ok
 }
 
-func (node *node) HasLabel(labels ...string) bool {
+func (n *node) HasLabel(labels ...string) bool {
 	for _, label := range labels {
-		i := sort.SearchStrings([]string(node.labels), label)
-		if i < len(node.labels) && node.labels[i] == label {
+		i := sort.SearchStrings(n.labels, label)
+		if i < len(n.labels) && n.labels[i] == label {
 			// x is present at data[i]
 		} else {
 			// x is not present in data,
@@ -65,8 +66,8 @@ func (node *node) HasLabel(labels ...string) bool {
 	return true
 }
 
-func (node *node) Labels() []string {
-	return node.labels
+func (n *node) Labels() []string {
+	return n.labels
 }
 
 func (n *node) RelateTo(endI Node, relType string) Relation {
@@ -91,15 +92,15 @@ func (n *node) RelateTo(endI Node, relType string) Relation {
 	return rel
 }
 
-func (node *node) Relations(dir Direction) []Relation {
+func (n *node) Relations(dir Direction) []Relation {
 	if dir == Both {
-		return node.relations
+		return n.relations
 	}
 
 	rels := make([]Relation, 0)
 
-	for _, rel := range node.relations {
-		if dir == Incoming && rel.End().Id() == node.id || dir == Outgoing && rel.Start().Id() == node.id {
+	for _, rel := range n.relations {
+		if dir == Incoming && rel.End().Id() == n.id || dir == Outgoing && rel.Start().Id() == n.id {
 			rels = append(rels, rel)
 		}
 	}
@@ -107,6 +108,6 @@ func (node *node) Relations(dir Direction) []Relation {
 	return rels
 }
 
-func (node *node) Id() int {
-	return node.id
+func (n *node) Id() int {
+	return n.id
 }

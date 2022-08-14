@@ -2,10 +2,11 @@ package simplefile
 
 import (
 	"fmt"
-	. "github.com/BuJo/goneo/db"
 	"math/rand"
 	"os"
 	"testing"
+
+	. "github.com/BuJo/goneo/db"
 )
 
 func ExampleNewDb() {
@@ -279,11 +280,11 @@ func BenchmarkCreateNode(b *testing.B) {
 	}
 }
 
-var DB_CACHE DatabaseService
+var Cache DatabaseService
 
 func createRandomDb(maxNodes int) DatabaseService {
-	if DB_CACHE != nil {
-		return DB_CACHE
+	if Cache != nil {
+		return Cache
 	}
 
 	rand.Seed(42)
@@ -297,7 +298,7 @@ func createRandomDb(maxNodes int) DatabaseService {
 		n.RelateTo(t, "HAS")
 	}
 
-	DB_CACHE = db
+	Cache = db
 
 	return db
 }

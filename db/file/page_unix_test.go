@@ -1,4 +1,4 @@
-// +build linux darwin
+//go:build linux || darwin
 
 package file
 
@@ -19,7 +19,7 @@ func TestPage(t *testing.T) {
 	defer os.Remove("test-page0.db")
 
 	page, perr := ps.GetPage(0)
-	if perr == nil {
+	if perr == nil || page != nil {
 		t.Fatal("Should not yet have a page")
 	}
 

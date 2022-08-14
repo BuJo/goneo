@@ -1,4 +1,4 @@
-// Package implementing graph isomorphism algorithms and helpers.
+// Package sgi implementing graph isomorphism algorithms and helpers.
 package sgi
 
 import (
@@ -7,12 +7,12 @@ import (
 	"github.com/BuJo/goneo/log"
 )
 
-var NULL_NODE = -1
+var NullNode = -1
 
 type Graph interface {
 	Order() int
 
-	// contains link from node a to b
+	// Contains link from node a to b
 	Contains(a, b int) bool
 
 	Successors(n int) []int
@@ -44,16 +44,16 @@ type State interface {
 	String() string
 }
 
-// Function to describe if it semantically feasable to traverse from one
+// SemFeasFunc to describe if it semantically feasable to traverse from one
 // node to another by looking at the describing query nodes and the actual
 // nodes in the graph.
 // This is called if a raw edge between the two nodes exist.
 type SemFeasFunc func(state State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool
 
-// Find isomorphism using the given state machine.
+// FindIsomorphism using the given state machine.
 func FindIsomorphism(initialState State) []map[int]int {
 
-	isoMappings := make([]map[int]int, 0, 0)
+	isoMappings := make([]map[int]int, 0)
 
 	match(initialState, &isoMappings)
 
@@ -89,7 +89,7 @@ func match(state State, isoMappings *[]map[int]int) {
 
 	n1, n2 := state.NextPair()
 
-	for ; n1 != NULL_NODE; n1, n2 = state.NextPair() {
+	for ; n1 != NullNode; n1, n2 = state.NextPair() {
 		log.Print("State:", state, " next pair: ", n1, n2)
 
 		if state.IsFeasablePair(n1, n2) {

@@ -8,7 +8,7 @@ const (
 	Outgoing
 )
 
-// Convert a string to a direction
+// DirectionFromString converts a string to a direction
 func DirectionFromString(str string) Direction {
 	if str == "out" || str == "outgoing" {
 		return Outgoing

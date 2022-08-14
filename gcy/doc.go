@@ -1,4 +1,4 @@
-// Lexer and parser for a graph language.
+// Package gcy contains a lexer and parser for a graph language.
 /*
 Language EBNF:
 

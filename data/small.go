@@ -4,23 +4,23 @@ import (
 	. "github.com/BuJo/goneo/db"
 )
 
-type smallgen struct{ DatabaseService }
+type small struct{ DatabaseService }
 
-func NewSmallGenerator(db DatabaseService) DatabaseGenerator {
+func NewSmallGenerator(db DatabaseService) *small {
 
-	return smallgen{db}
+	return &small{db}
 }
 
-func (db smallgen) Generate() DatabaseService {
-	nodeA := db.NewNode()
+func (gen *small) Generate() DatabaseService {
+	nodeA := gen.NewNode()
 	nodeA.SetProperty("foo", "bar")
 
-	nodeB := db.NewNode()
+	nodeB := gen.NewNode()
 	nodeA.RelateTo(nodeB, "BELONGS_TO")
 
-	nodeC := db.NewNode()
+	nodeC := gen.NewNode()
 
 	nodeB.RelateTo(nodeC, "BELONGS_TO")
 
-	return db
+	return gen
 }

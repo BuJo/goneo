@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+
 	. "github.com/BuJo/goneo/db"
 )
 
@@ -14,9 +15,9 @@ type universeGenerator struct {
 	series   Node
 }
 
-// Generator for an in-memory database containing information about
+// NewUniverseGenerator for an in-memory database containing information about
 // a reasonably popular sci-fi TV series.
-func NewUniverseGenerator(db DatabaseService) DatabaseGenerator {
+func NewUniverseGenerator(db DatabaseService) *universeGenerator {
 	gen := new(universeGenerator)
 
 	gen.db = db

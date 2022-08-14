@@ -28,7 +28,7 @@ func (state *vf2State) GetSubgraph() Graph { return state.query }
 
 func (state *vf2State) NextPair() (int, int) {
 	if len(state.candidates) == 0 {
-		return NULL_NODE, NULL_NODE
+		return NullNode, NullNode
 	}
 
 	candidate := state.candidates[len(state.candidates)-1]
@@ -70,7 +70,7 @@ func (state *vf2State) lastQueryNodeMapped() bool {
 }
 
 func (state *vf2State) clearMapping() {
-	for k, _ := range state.mapping {
+	for k := range state.mapping {
 		delete(state.mapping, k)
 	}
 }
@@ -87,7 +87,7 @@ func (state *vf2State) IsFeasablePair(queryNode, targetNode int) bool {
 			log.Printf("(%d,%d)~>(%d,%d) are syntactically feasable, sem: %v", state.queryPath[len(state.queryPath)-1], state.targetPath[len(state.targetPath)-1], queryNode, targetNode, fSem)
 		} else {
 
-			fSem = state.isSemanticallyFeasable(state, NULL_NODE, NULL_NODE, queryNode, targetNode)
+			fSem = state.isSemanticallyFeasable(state, NullNode, NullNode, queryNode, targetNode)
 			log.Printf("(%d,%d) is syntactically feasable, sem: %v", queryNode, targetNode, fSem)
 		}
 	}
@@ -143,7 +143,7 @@ func (state *vf2State) isSyntacticallyFeasable(queryNode, targetNode int) bool {
 
 func (state *vf2State) isFeasableCandidate(queryNode, targetNode int) bool {
 	// Test: not already visited
-	for q, _ := range state.mapping {
+	for q := range state.mapping {
 		if q == queryNode || state.mapping[queryNode] == targetNode {
 			return false
 		}
@@ -250,7 +250,7 @@ func newVF2State(query, target Graph, fsem SemFeasFunc) State {
 	return state
 }
 
-// Find a graph within another using the VF2 algorithm. It returns numeric mappings
+// FindVF2SubgraphIsomorphism finds a graph within another using the VF2 algorithm. It returns numeric mappings
 // between the query and target graphs. Use the SemFeasFunc to further
 // limit the algorithm to the nodes which really should be related.
 func FindVF2SubgraphIsomorphism(query, target Graph, fsem SemFeasFunc) []map[int]int {

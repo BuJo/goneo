@@ -2,11 +2,11 @@ package mem
 
 import (
 	"fmt"
+
 	. "github.com/BuJo/goneo/db"
 )
 
 type relation struct {
-	db *databaseService
 	id int
 
 	typ        string

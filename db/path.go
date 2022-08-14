@@ -24,7 +24,7 @@ type simplePath struct {
 	relations []Relation
 }
 
-// Return all nodes from a path
+// Nodes returns all nodes from a path
 func (path *simplePath) Nodes() (nodes []Node) {
 	nodes = make([]Node, 0)
 
@@ -41,12 +41,12 @@ func (path *simplePath) Nodes() (nodes []Node) {
 	return
 }
 
-// Return all relations from a path
+// Relations returns all relations from a path
 func (path *simplePath) Relations() []Relation {
 	return path.relations
 }
 
-// Return all elements from a path
+// Items returns all elements from a path
 func (path *simplePath) Items() []PropertyContainer {
 	items := make([]PropertyContainer, 0)
 	items = append(items, path.start)
@@ -64,7 +64,7 @@ func (path *simplePath) Items() []PropertyContainer {
 }
 
 func (path *simplePath) String() (str string) {
-	str = fmt.Sprintf("%s", path.start)
+	str = path.start.String()
 	left := path.start
 
 	for _, rel := range path.relations {

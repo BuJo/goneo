@@ -39,6 +39,9 @@ func NewDb(name string, options map[string][]string) (DatabaseService, error) {
 
 	var err error
 	db.pagestore, err = NewPageStore(db.name)
+	if err != nil {
+		return nil, err
+	}
 
 	if db.pagestore.NumPages() > 0 {
 		err = db.loadNodes()
@@ -301,5 +304,5 @@ func (db *filedb) FindPath(start, end Node) Path                { return nil }
 func (db *filedb) FindNodeByProperty(prop, value string) []Node { return nil }
 
 func (db *filedb) Close() {
-	db.saveNodes()
+	_ = db.saveNodes()
 }

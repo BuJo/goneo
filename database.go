@@ -2,20 +2,22 @@ package goneo
 
 import (
 	"errors"
+	"net/url"
+
 	. "github.com/BuJo/goneo/db"
 	"github.com/BuJo/goneo/db/mem"
-	"net/url"
 )
 
 type newdb func(db string, options map[string][]string) (DatabaseService, error)
 
-var dbRegistrty map[string]newdb = map[string]newdb{
+var dbRegistry = map[string]newdb{
 	"mem": mem.NewDb,
 }
 
-// Open a database by URI.
+// OpenDb opens a database by URI.
 // Example:
-// 	OpenDb("mem:testdb")
+//
+//	OpenDb("mem:testdb")
 func OpenDb(dbUri string) (DatabaseService, error) {
 	uri, uriErr := url.ParseRequestURI(dbUri)
 	if uriErr != nil {
@@ -26,7 +28,7 @@ func OpenDb(dbUri string) (DatabaseService, error) {
 	dbInfo := uri.Opaque
 	dbOpts := uri.Query()
 
-	dbfunc, foundType := dbRegistrty[dbType]
+	dbfunc, foundType := dbRegistry[dbType]
 	if !foundType {
 		return nil, errors.New("Did not find DB type for " + dbType)
 	}

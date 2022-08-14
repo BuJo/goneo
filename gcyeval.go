@@ -16,8 +16,6 @@ type (
 		subgraphNameMap    map[string]int
 		subgraphRevNameMap map[int]string
 
-		subgraph *dbGraph
-
 		db DatabaseService
 	}
 
@@ -196,10 +194,10 @@ func (rr *returns) evaluate(ctx evalContext) *TabularData {
 	for _, o := range evaluateReturnable(ctx, r) {
 		line := make(map[string]interface{})
 
-		switch o.(type) {
+		switch o := o.(type) {
 		case Node:
 			if r.Field != "" {
-				line[r.Alias] = o.(Node).Property(r.Field)
+				line[r.Alias] = o.Property(r.Field)
 			} else {
 				line[r.Alias] = o
 			}
@@ -242,11 +240,11 @@ func evaluateReturnable(ctx evalContext, r *gcy.Returnable) []interface{} {
 	return objs
 }
 
-//Evaluate a gcy query
+// Evaluate a gcy query
 //
 // Example:
 //
-// 	start n=node(*) return n
+//	start n=node(*) return n
 func Evaluate(db DatabaseService, qry string) (*TabularData, error) {
 	q, err := gcy.Parse("goneo", qry)
 	if err != nil {
@@ -254,13 +252,13 @@ func Evaluate(db DatabaseService, qry string) (*TabularData, error) {
 	}
 	table := (&query{q}).evaluate(evalContext{db: db})
 	if table == nil {
-		return nil, errors.New("Could not evaluate query")
+		return nil, errors.New("could not evaluate query")
 	}
 
 	return table, nil
 }
 
-// defines semantic feasability of the given state M(s) and n' m'
+// defines semantic feasibility of the given state M(s) and n' m'
 func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQueryNode, toTargetNode int) bool {
 	graph := state.GetGraph().(*dbGraph).db
 	subgraph := state.GetSubgraph().(*dbGraph).db
@@ -280,7 +278,7 @@ func isSemanticallyFeasable(state sgi.State, fromQueryNode, fromTargetNode, toQu
 		}
 	}
 
-	if fromQueryNode == sgi.NULL_NODE {
+	if fromQueryNode == sgi.NullNode {
 		log.Printf("queryNode: %s , targetNode: %s\n", q2, t2)
 		return labelsOk && propsOk
 	}

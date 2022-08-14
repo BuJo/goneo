@@ -1,4 +1,4 @@
-// Package containing test data
+// Package data containing test data
 package data
 
 import . "github.com/BuJo/goneo/db"

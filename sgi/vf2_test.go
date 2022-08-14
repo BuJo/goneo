@@ -37,7 +37,7 @@ func isSemanticallyFeasable(state State, fromQueryNode, fromTargetNode, toQueryN
 	return true
 }
 
-var testgraph *dbGraphMock = &dbGraphMock{
+var testgraph = &dbGraphMock{
 	nodes: []int{100, 102, 103},
 	edges: [][]bool{
 		{false, true, true},
@@ -105,7 +105,7 @@ func TestSemanticIsomorphism(t *testing.T) {
 	found := false
 	for _, mapping := range mappings {
 		// Each mapping contains the query and target node ids
-		for q, _ := range mapping {
+		for q := range mapping {
 			if subgraph.nodes[q] == 100 {
 				found = true
 			}
@@ -138,7 +138,7 @@ func TestSemanticallyFailingIsomorphism(t *testing.T) {
 	found := false
 	for _, mapping := range mappings {
 		// Each mapping contains the query and target node ids
-		for q, _ := range mapping {
+		for q := range mapping {
 			if subgraph.nodes[q] == 100 {
 				found = true
 			}

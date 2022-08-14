@@ -1,3 +1,4 @@
+// Package log initializes our logger
 package log
 
 import (
@@ -17,18 +18,18 @@ func SetDefault(l *log.Logger) {
 }
 
 func Fatal(v ...interface{}) {
-	logger.Output(2, fmt.Sprint(v...))
+	_ = logger.Output(2, fmt.Sprint(v...))
 	os.Exit(1)
 }
 
 func Print(v ...interface{}) {
-	logger.Output(2, fmt.Sprint(v...))
+	_ = logger.Output(2, fmt.Sprint(v...))
 }
 
 func Println(v ...interface{}) {
-	logger.Output(2, fmt.Sprintln(v...))
+	_ = logger.Output(2, fmt.Sprintln(v...))
 }
 
 func Printf(format string, v ...interface{}) {
-	logger.Output(2, fmt.Sprintf(format, v...))
+	_ = logger.Output(2, fmt.Sprintf(format, v...))
 }

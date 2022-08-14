@@ -1,4 +1,4 @@
-// Web interface for goneo.
+// Package web interface for goneo.
 package web
 
 import (
@@ -22,7 +22,7 @@ type (
 		binding string
 	}
 
-	// JSON representation of a node
+	// NodeResponse is a representation of a node
 	NodeResponse struct {
 		Self                  string
 		Property              string
@@ -32,7 +32,7 @@ type (
 		OutgoingRelationships string `json:"Outgoing_Relationships"`
 		IncomingRelationships string `json:"Incoming_Relationships"`
 	}
-	// JSON representation of a relationship
+	// RelationshipResponse is a representation of a relationship
 	RelationshipResponse struct {
 		Start      string
 		Data       map[string]string
@@ -42,7 +42,7 @@ type (
 		Type       string
 		End        string
 	}
-	// JSON representation of an error condition
+	// ErrorResponse is a representation of an error condition
 	ErrorResponse struct {
 		Message    string
 		Exception  string
@@ -163,7 +163,7 @@ func graphvizHandler(c *gin.Context) {
 		for i := 0; i < table.Len(); i++ {
 			for _, col := range table.Columns() {
 				if node, isnode := table.Get(i, col).(goneodb.Node); isnode {
-					newnode, _ := nodemapping[node.Id()]
+					newnode := nodemapping[node.Id()]
 					for _, rel := range node.Relations(goneodb.Outgoing) {
 						// For each Relation check if the target is mapped as well and
 						// create a new edge

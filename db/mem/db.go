@@ -1,11 +1,12 @@
-// Simple memory based implementation of DatabaseService.
+// Package mem is a simple memory based implementation of DatabaseService.
 package mem
 
 import (
 	"errors"
 	"fmt"
-	. "github.com/BuJo/goneo/db"
 	"sort"
+
+	. "github.com/BuJo/goneo/db"
 )
 
 type databaseService struct {
@@ -13,7 +14,7 @@ type databaseService struct {
 	relationships []Relation
 }
 
-// Create a DB instance of a simple memory backed graph DB
+// NewDb creates a DB instance of a simple memory backed graph DB
 func NewDb(name string, options map[string][]string) (DatabaseService, error) {
 	db := new(databaseService)
 
@@ -38,9 +39,7 @@ func (db *databaseService) NewNode(labels ...string) Node {
 	sort.Strings(labels)
 
 	n.labels = make([]string, 0, 1)
-	for _, l := range labels {
-		n.labels = append(n.labels, l)
-	}
+	n.labels = append(n.labels, labels...)
 
 	return n
 }
@@ -58,7 +57,7 @@ func (db *databaseService) createRelation(a, b Node) *relation {
 
 func (db *databaseService) GetNode(id int) (Node, error) {
 	if db.nodes == nil || len(db.nodes) < id+1 || id < 0 {
-		return nil, errors.New(fmt.Sprintf("Node %d not found", id))
+		return nil, fmt.Errorf("node %d not found", id)
 	}
 	return db.nodes[id], nil
 }
@@ -69,7 +68,7 @@ func (db *databaseService) GetAllNodes() []Node {
 
 func (db *databaseService) GetRelation(id int) (Relation, error) {
 	if db.nodes == nil || len(db.relationships) < id+1 {
-		return nil, errors.New("Relationship not found")
+		return nil, errors.New("relationship not found")
 	}
 	return db.relationships[id], nil
 }

@@ -1,4 +1,4 @@
-// +build linux darwin
+//go:build linux || darwin
 
 package file
 
@@ -108,7 +108,7 @@ func (ps *PageStore) AddPage() (err error) {
 		}
 
 		var page []byte
-		var freepage int = ps.NumPages() - 1
+		var freepage = ps.NumPages() - 1
 
 		page, err = ps.GetPage(freepage)
 		binary.LittleEndian.PutUint64(page, uint64(ps.freepage))
@@ -138,7 +138,7 @@ func (ps *PageStore) remapFile() error {
 		return errno
 	}
 	if ps.backing != addr {
-		return errors.New("Can not change addr")
+		return errors.New("can not change addr")
 	}
 
 	log.Printf("Remapped 0x%08x to length %d", ps.backing, ps.size)

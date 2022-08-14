@@ -1,7 +1,6 @@
 package gcy
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -73,7 +72,7 @@ func (list errorList) Error() string {
 }
 
 func newError(msg string) error {
-	return errors.New(fmt.Sprintf("%s", msg))
+	return fmt.Errorf("%s", msg)
 }
 
 type parser struct {
@@ -115,9 +114,7 @@ func (p *parser) expectType(tok itemType) {
 func (p *parser) parseStart() []*Root {
 	log.Print("parsing search query")
 
-	var roots []*Root
-
-	roots = p.parseRoots()
+	roots := p.parseRoots()
 
 	log.Print("returning from search query: ", roots)
 

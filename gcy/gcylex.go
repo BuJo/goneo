@@ -193,10 +193,7 @@ func (l *lexer) acceptUntil(valid string) bool {
 func (l *lexer) skipSpace() bool {
 	numSkipped := l.acceptRun(markSpace)
 	l.ignore()
-	if numSkipped > 0 {
-		return true
-	}
-	return false
+	return numSkipped > 0
 }
 func (l *lexer) atBoundary() bool {
 	r := l.peek()

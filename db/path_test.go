@@ -32,7 +32,7 @@ func (*mockrel) String() string                          { return "HAS" }
 func ExampleNewPathBuilder() {
 	var start Node = &mocknode{"a"}
 	var end Node = &mocknode{"b"}
-	var rel Relation = start.RelateTo(end, "HAS")
+	var rel = start.RelateTo(end, "HAS")
 
 	builder := NewPathBuilder(start)
 	builder = builder.Append(rel)
@@ -44,7 +44,7 @@ func ExampleNewPathBuilder() {
 func TestPathBuilding(t *testing.T) {
 	var start Node = &mocknode{"a"}
 	var end Node = &mocknode{"b"}
-	var rel Relation = start.RelateTo(end, "HAS")
+	var rel = start.RelateTo(end, "HAS")
 
 	builder := NewPathBuilder(start)
 	builder = builder.Append(rel)

@@ -205,6 +205,7 @@ func NewGoneoServer(db goneodb.DatabaseService) GoneoServer {
 	s := new(goneoServer)
 
 	s.router = gin.Default()
+	_ = s.router.SetTrustedProxies([]string{"10.0.0.0/8", "172.16.0.0/16", "192.168.0.0/24"})
 	s.binding = ":7474"
 
 	s.router.Use(func(c *gin.Context) { c.Set("db", db) })

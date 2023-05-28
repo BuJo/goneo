@@ -33,6 +33,7 @@ var (
 )
 
 func main() {
+	appCtx := ApplicationContext()
 	flag.Parse()
 
 	if *version {
@@ -56,7 +57,5 @@ func main() {
 		*binding = ":" + port
 	}
 
-	server.Bind(*binding)
-
-	server.Start()
+	web.Handle(appCtx, *binding, server)
 }

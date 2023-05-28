@@ -2,24 +2,20 @@
 package web
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/BuJo/goneo"
 	goneodb "github.com/BuJo/goneo/db"
-	"github.com/BuJo/goneo/log"
-	"github.com/gin-gonic/gin"
 )
 
-type GoneoServer interface {
-	Bind(binding string) GoneoServer // default: :7474
-	Start()
-}
-
 type (
-	goneoServer struct {
-		router  *gin.Engine
-		binding string
+	webHandler struct {
+		routes []route
+
+		db goneodb.DatabaseService
 	}
 
 	// NodeResponse is a representation of a node
@@ -51,65 +47,70 @@ type (
 	}
 )
 
-func baseNodeHandler(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
+func (h *webHandler) baseNodeHandler(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "Not Implemented", http.StatusNotImplemented)
 }
 
 // BUG(Jo): createNodeHandler can not create nodes with labels
 
-func createNodeHandler(c *gin.Context) {
-	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+func (h *webHandler) createNodeHandler(w http.ResponseWriter, req *http.Request) {
+	var nodes map[string]string
 
-	var json map[string]string
-	if c.BindJSON(&json) == nil {
-		node := db.NewNode()
-		for key, val := range json {
+	decoder := json.NewDecoder(req.Body)
+	if decoder.Decode(&nodes) == nil {
+		node := h.db.NewNode()
+		for key, val := range nodes {
 			node.SetProperty(key, val)
 		}
-		c.JSON(http.StatusCreated, gin.H{"status": "created node"})
+
+		encoder := json.NewEncoder(w)
+		_ = encoder.Encode(map[string]string{"status": "created node"})
+		w.WriteHeader(http.StatusCreated)
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad request"})
+		http.Error(w, `{"status":"Bad Request"}`, http.StatusBadRequest)
 	}
 }
-func relationshipHandler(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{"status": "not implemented"})
+func (h *webHandler) relationshipHandler(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, "Not Implemented", http.StatusNotImplemented)
 }
-func nodeHandler(c *gin.Context) {
-	db, _ := c.MustGet("db").(goneodb.DatabaseService)
-
-	nodeId, idErr := strconv.Atoi(c.Param("id"))
-	if idErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad id"})
+func (h *webHandler) nodeHandler(w http.ResponseWriter, req *http.Request) {
+	nodeId, err := strconv.Atoi(getField(req, 0))
+	if err != nil {
+		http.Error(w, `{"status":"Bad ID"}`, http.StatusBadRequest)
 		return
 	}
 
-	node, nodeerr := db.GetNode(nodeId)
-	if nodeerr != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "not found"})
+	node, err := h.db.GetNode(nodeId)
+	if err != nil {
+		http.Error(w, `{"status":"Not Found"}`, http.StatusNotFound)
 		return
 	}
 
 	res := NodeResponse{}
-	res.Self = "/db/data/node/" + c.Param("id")
-	res.OutgoingRelationships = "/db/data/node/" + c.Param("id") + "/direction/out"
+	res.Self = fmt.Sprintf("/db/data/node/%d", nodeId)
+	res.OutgoingRelationships = fmt.Sprintf("/db/data/node/%d/direction/out", nodeId)
 
 	res.Data = node.Properties()
 
-	c.JSON(http.StatusOK, res)
+	encoder := json.NewEncoder(w)
+	_ = encoder.Encode(res)
+	w.WriteHeader(http.StatusOK)
 }
-func nodeRelHandler(c *gin.Context) {
-	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+func (h *webHandler) nodeRelHandler(w http.ResponseWriter, req *http.Request) {
+	direction := goneodb.Both
+	if d, ok := req.URL.Query()["direction"]; ok {
+		direction = goneodb.DirectionFromString(d[0])
+	}
 
-	direction := goneodb.DirectionFromString(c.Param("direction"))
-	nodeId, idErr := strconv.Atoi(c.Param("id"))
-	if idErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "bad id"})
+	nodeId, err := strconv.Atoi(getField(req, 0))
+	if err != nil {
+		http.Error(w, `{"status":"Not Found"}`, http.StatusNotFound)
 		return
 	}
 
-	node, nodeerr := db.GetNode(nodeId)
-	if nodeerr != nil {
-		c.JSON(http.StatusNotFound, gin.H{"status": "not found"})
+	node, err := h.db.GetNode(nodeId)
+	if err != nil {
+		http.Error(w, `{"status":"Not Found"}`, http.StatusNotFound)
 		return
 	}
 
@@ -124,20 +125,24 @@ func nodeRelHandler(c *gin.Context) {
 		res = append(res, r)
 	}
 
-	c.JSON(http.StatusOK, res)
+	encoder := json.NewEncoder(w)
+	_ = encoder.Encode(res)
+	w.WriteHeader(http.StatusOK)
 }
 
 // BUG(Jo): re-packaging result table into graph misses rel properties
 
-func graphvizHandler(c *gin.Context) {
-	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+func (h *webHandler) graphvizHandler(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
 
-	gocy := c.PostForm("gocy")
+	gocy := req.FormValue("gocy")
+
+	db := h.db
 	if gocy != "" {
 		// Execute query
 		table, err := goneo.Evaluate(db, gocy)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -181,65 +186,44 @@ func graphvizHandler(c *gin.Context) {
 
 	dot := goneo.DumpDot(db)
 
-	c.String(http.StatusOK, dot)
+	w.Write([]byte(dot))
+	w.WriteHeader(http.StatusOK)
 }
 
-func gocyTableHandler(c *gin.Context) {
-	db, _ := c.MustGet("db").(goneodb.DatabaseService)
+func (h *webHandler) gocyTableHandler(w http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
 
-	gocy := c.PostForm("gocy")
+	gocy := req.FormValue("gocy")
 	if gocy != "" {
-		table, err := goneo.Evaluate(db, gocy)
+		table, err := goneo.Evaluate(h.db, gocy)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"status": err.Error()})
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		c.String(http.StatusOK, table.String())
+		w.Write([]byte(table.String()))
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
-	c.String(http.StatusOK, "")
+	w.WriteHeader(http.StatusNotFound)
 }
 
-func NewGoneoServer(db goneodb.DatabaseService) GoneoServer {
-	s := new(goneoServer)
+func NewGoneoServer(db goneodb.DatabaseService) http.Handler {
+	s := &webHandler{
+		db: db,
+	}
 
-	s.router = gin.Default()
-	_ = s.router.SetTrustedProxies([]string{"10.0.0.0/8", "172.16.0.0/16", "192.168.0.0/24"})
-	s.binding = ":7474"
-
-	s.router.Use(func(c *gin.Context) { c.Set("db", db) })
+	s.routes = []route{
+		newRoute("GET", "/graphviz", s.graphvizHandler),
+		newRoute("POST", "/graphviz", s.graphvizHandler),
+		newRoute("POST", "/table", s.gocyTableHandler),
+		newRoute("GET", "/db/data/node", s.baseNodeHandler),
+		newRoute("POST", "/db/data/node", s.createNodeHandler),
+		newRoute("GET", "/db/data/node/([^/]+)", s.nodeHandler),
+		newRoute("GET", "/db/data/node/([^/]+)/relationships", s.nodeRelHandler),
+		newRoute("GET", "/db/data/relationship/([^/]+)", s.relationshipHandler),
+	}
 
 	return s
-}
-
-func (s *goneoServer) Bind(binding string) GoneoServer {
-	s.binding = binding
-
-	return s
-}
-
-func (s *goneoServer) Start() {
-
-	datarouter := s.router.Group("/db/data")
-
-	s.router.GET("/graphviz", graphvizHandler)
-	s.router.POST("/graphviz", graphvizHandler)
-	s.router.POST("/table", gocyTableHandler)
-
-	noderouter := datarouter.Group("/node")
-	{
-		noderouter.GET("/", baseNodeHandler)
-		noderouter.POST("/", createNodeHandler)
-		noderouter.GET("/:id", nodeHandler)
-		noderouter.GET("/:id/relationships/:direction", nodeRelHandler)
-	}
-	relrouter := datarouter.Group("/relationship")
-	{
-		relrouter.GET("/:id", relationshipHandler)
-	}
-
-	if err := s.router.Run(s.binding); err != nil {
-		log.Fatal(err)
-	}
 }

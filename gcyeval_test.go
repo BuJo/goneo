@@ -1,11 +1,12 @@
 package goneo
 
 import (
-	"github.com/BuJo/goneo/data"
-	"github.com/BuJo/goneo/db"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/BuJo/goneo/data"
+	"github.com/BuJo/goneo/db"
 )
 
 func setupTestDb(t *testing.T) db.DatabaseService {

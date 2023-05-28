@@ -33,4 +33,4 @@ func (n *node) UnmarshalBinary(data []byte) error {
 	_, err := fmt.Fscanln(b, &v.x, &v.y, &v.z)
 	return err
 }
-	*/
+*/

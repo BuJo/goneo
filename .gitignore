@@ -3,4 +3,4 @@ Godeps/*
 sgi/mx/*
 doc/*.pdf
 vendor/
-goneo
+/goneo

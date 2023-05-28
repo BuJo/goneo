@@ -287,8 +287,6 @@ func createRandomDb(maxNodes int) DatabaseService {
 		return Cache
 	}
 
-	rand.Seed(42)
-
 	db, _ := NewDb("test", nil)
 
 	db.NewNode()
@@ -305,7 +303,6 @@ func createRandomDb(maxNodes int) DatabaseService {
 
 func BenchmarkPathFinding(b *testing.B) {
 	maxNodes := 500000
-	rand.Seed(42)
 
 	db := createRandomDb(maxNodes)
 

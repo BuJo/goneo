@@ -15,7 +15,6 @@ func NewLargeRandomGenerator(db DatabaseService) *random {
 
 func (gen *random) Generate() DatabaseService {
 	maxNodes := 5000
-	rand.Seed(42)
 
 	gen.NewNode()
 	for n := gen.NewNode(); n.Id() < maxNodes; n = gen.NewNode() {

@@ -8,7 +8,6 @@ import "C"
 import (
 	"encoding/binary"
 	"errors"
-	"reflect"
 	"syscall"
 	"unsafe"
 
@@ -91,12 +90,9 @@ func (ps *PageStore) GetPage(pgnum int) ([]byte, error) {
 		return nil, errors.New("page number too high")
 	}
 
-	var s []byte
-	sp := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	sp.Data = ps.backing + HEADER_SIZE + PAGE_SIZE*uintptr(pgnum)
-	sp.Len, sp.Cap = PAGE_SIZE, PAGE_SIZE
-
-	return s, nil
+	p := ps.backing + HEADER_SIZE + PAGE_SIZE*uintptr(pgnum)
+	l := PAGE_SIZE
+	return unsafe.Slice((*byte)(unsafe.Pointer(p)), l), nil
 }
 
 func (ps *PageStore) AddPage() (err error) {

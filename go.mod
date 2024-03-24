@@ -1,3 +1,3 @@
 module github.com/BuJo/goneo
 
-go 1.20
+go 1.22

@@ -30,7 +30,7 @@ func (path *simplePath) Nodes() (nodes []Node) {
 
 	nodes = append(nodes, path.start)
 
-	if path.relations == nil || len(path.relations) == 0 {
+	if len(path.relations) == 0 {
 		return
 	}
 
@@ -51,7 +51,7 @@ func (path *simplePath) Items() []PropertyContainer {
 	items := make([]PropertyContainer, 0)
 	items = append(items, path.start)
 
-	if path.relations == nil || len(path.relations) == 0 {
+	if len(path.relations) == 0 {
 		return items
 	}
 
